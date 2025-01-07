@@ -3,128 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural Network Calculator</title>
+    <title>Red Neuronal con 9 Entradas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
         }
-
-        .container {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        .form-container {
-            width: 25%; /* Formulario más pequeño */
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
         .input-group {
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
-
         label {
             display: block;
             margin-bottom: 5px;
         }
-
-        input[type="number"] {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+        input {
+            width: 100px;
         }
-
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #0056b3;
-        }
-
-        .output {
-            margin-top: 20px;
-            font-size: 18px;
-        }
-
         canvas {
-            width: 70%;
-            height: 500px; /* Mayor altura para visualizar la red de forma horizontal */
-            background-color: #f0f0f0;
             border: 1px solid #ccc;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Formulario para introducir los datos -->
-        <div class="form-container">
-            <form id="nn-form">
-                <div class="input-group">
-                    <label for="tankLevel">Tank Level</label>
-                    <input type="number" id="tankLevel" required>
-                </div>
-                <div class="input-group">
-                    <label for="clSet">Cl Set</label>
-                    <input type="number" id="clSet" required>
-                </div>
-                <div class="input-group">
-                    <label for="pump">Pump</label>
-                    <input type="number" id="pump" required>
-                </div>
-                <div class="input-group">
-                    <label for="uv">UV%</label>
-                    <input type="number" id="uv" required>
-                </div>
-                <div class="input-group">
-                    <label for="flow">Flow</label>
-                    <input type="number" id="flow" required>
-                </div>
-                <div class="input-group">
-                    <label for="infTurb">Influent Turbidity</label>
-                    <input type="number" id="infTurb" required>
-                </div>
-                <div class="input-group">
-                    <label for="effTurb">Effluent Turbidity</label>
-                    <input type="number" id="effTurb" required>
-                </div>
-                <div class="input-group">
-                    <label for="ph">pH</label>
-                    <input type="number" id="ph" required>
-                </div>
-                <div class="input-group">
-                    <label for="coagPPM">Coag PPM</label>
-                    <input type="number" id="coagPPM" required>
-                </div>
-                <button type="button" onclick="calculateOutput()">Calculate</button>
-            </form>
-            <div class="output" id="output"></div>
+    <h1>Red Neuronal con 9 Entradas</h1>
+    <form id="neuralForm">
+        <div class="input-group">
+            <label for="input1">Cl Set</label>
+            <input type="number" id="input1" value="0.7" required>
         </div>
-
-        <!-- Canvas para el gráfico de la red -->
-        <canvas id="nn-canvas" width="800" height="500"></canvas>
-    </div>
-
+        <div class="input-group">
+            <label for="input2">Pump</label>
+            <input type="number" id="input2" value="1.6" required>
+        </div>
+        <div class="input-group">
+            <label for="input3">UV%</label>
+            <input type="number" id="input3" value="30" required>
+        </div>
+        <div class="input-group">
+            <label for="input4">Flow</label>
+            <input type="number" id="input4" value="90" required>
+        </div>
+        <div class="input-group">
+            <label for="input5">Effluent Turbidity</label>
+            <input type="number" id="input5" value="0.6" required>
+        </div>
+        <div class="input-group">
+            <label for="input6">Tank Level</label>
+            <input type="number" id="input6" value="50" required>
+        </div>
+        <div class="input-group">
+            <label for="input7">Influent Turbidity</label>
+            <input type="number" id="input7" value="1" required>
+        </div>
+        <div class="input-group">
+            <label for="input8">pH</label>
+            <input type="number" id="input8" value="7.5" required>
+        </div>
+        <div class="input-group">
+            <label for="input9">Coagulant PPM</label>
+            <input type="number" id="input9" value="2" required>
+        </div>
+        <button type="button" onclick="calculateOutput()">Calcular</button>
+    </form>
+    <h2 id="output"></h2>
+    <canvas id="networkCanvas" width="800" height="600"></canvas>
     <script>
-        // Pesos y sesgos
         const weightsHidden = [
             [-1.5254, -2.8213, -2.0056, -0.5310, 0.0872, -2.6420, 2.2675, 1.6801, -2.4497],
             [0.1749, 1.1470, 0.0110, 0.9485, -0.7185, -0.5225, 0.5567, -3.0506, 0.2267],
@@ -139,49 +82,43 @@
         const weightsOutput = [2.6014, -2.9345, 2.8387, -2.7334, 4.3664, 2.6695];
         const biasOutput = 4.1839;
 
-        // Datos de normalización
         const normalizationData = [
-            { mu: 63.6731, sigma: 13.0110 }, // Tank Level
-            { mu: 0.7181, sigma: 0.0714 },   // Cl Set
-            { mu: 1.6355, sigma: 0.4813 },   // Pump
-            { mu: 30.5615, sigma: 4.7297 },  // UV%
-            { mu: 92.9365, sigma: 5.4898 },  // Flow
-            { mu: 1.6341, sigma: 1.8581 },   // Influent Turbidity
-            { mu: 0.6325, sigma: 0.4388 },   // Effluent Turbidity
-            { mu: 8.6380, sigma: 0.4105 },   // pH
-            { mu: 2.0431, sigma: 5.9868 }    // Coag PPM
+            { mu: 0.7181, sigma: 0.0714 },
+            { mu: 1.6355, sigma: 0.4813 },
+            { mu: 30.5615, sigma: 4.7297 },
+            { mu: 92.9365, sigma: 5.4898 },
+            { mu: 0.6325, sigma: 0.4388 },
+            { mu: 63.6731, sigma: 13.0110 },
+            { mu: 1.6341, sigma: 1.8581 },
+            { mu: 8.6380, sigma: 0.4105 },
+            { mu: 2.0431, sigma: 5.9868 }
         ];
 
-        // Función de normalización
         function normalize(value, mu, sigma) {
             return (value - mu) / sigma;
         }
 
-        // Función ReLU
-        function relu(value) {
-            return Math.max(0, value);
+        function relu(x) {
+            return Math.max(0, x);
         }
 
-        // Cálculo del resultado
         function calculateOutput() {
             const inputs = [
-                parseFloat(document.getElementById("tankLevel").value),
-                parseFloat(document.getElementById("clSet").value),
-                parseFloat(document.getElementById("pump").value),
-                parseFloat(document.getElementById("uv").value),
-                parseFloat(document.getElementById("flow").value),
-                parseFloat(document.getElementById("infTurb").value),
-                parseFloat(document.getElementById("effTurb").value),
-                parseFloat(document.getElementById("ph").value),
-                parseFloat(document.getElementById("coagPPM").value)
+                parseFloat(document.getElementById("input1").value),
+                parseFloat(document.getElementById("input2").value),
+                parseFloat(document.getElementById("input3").value),
+                parseFloat(document.getElementById("input4").value),
+                parseFloat(document.getElementById("input5").value),
+                parseFloat(document.getElementById("input6").value),
+                parseFloat(document.getElementById("input7").value),
+                parseFloat(document.getElementById("input8").value),
+                parseFloat(document.getElementById("input9").value)
             ];
 
-            // Normalización
             const normalizedInputs = inputs.map((value, index) =>
                 normalize(value, normalizationData[index].mu, normalizationData[index].sigma)
             );
 
-            // Cálculo de la capa oculta
             const hiddenLayerOutputs = weightsHidden.map((weights, neuronIndex) => {
                 const sum = weights.reduce((acc, weight, inputIndex) => 
                     acc + weight * normalizedInputs[inputIndex], biasesHidden[neuronIndex]
@@ -189,88 +126,75 @@
                 return relu(sum);
             });
 
-            // Cálculo de la salida
             const output = hiddenLayerOutputs.reduce((acc, value, index) =>
                 acc + value * weightsOutput[index], biasOutput
             );
 
-            // Mostrar el resultado
             document.getElementById("output").innerText = `Output: ${output.toFixed(4)}`;
-
-            // Dibujar el gráfico de la red
             drawNetwork(normalizedInputs, hiddenLayerOutputs, output);
         }
 
-        // Función para dibujar la red neuronal
         function drawNetwork(inputs, hiddenOutputs, output) {
-            const canvas = document.getElementById("nn-canvas");
+            const canvas = document.getElementById("networkCanvas");
             const ctx = canvas.getContext("2d");
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const inputLayerX = 100;
-            const hiddenLayerX = 350;
-            const outputLayerX = 600;
-            const layerY = 250;
+            const hiddenLayerX = 400;
+            const outputLayerX = 700;
 
-            // Dibujar las entradas
             const inputSpacing = 50;
-            inputs.forEach((input, i) => {
-                const y = layerY - (inputs.length / 2 - i) * inputSpacing;
+            const hiddenSpacing = 70;
+
+            const inputPositions = inputs.map((input, i) => {
+                const y = 100 + i * inputSpacing;
                 ctx.beginPath();
-                ctx.arc(inputLayerX, y, 20, 0, 2 * Math.PI);
+                ctx.arc(inputLayerX, y, 20, 0, Math.PI * 2);
                 ctx.fillStyle = "#3498DB";
                 ctx.fill();
                 ctx.stroke();
                 ctx.fillStyle = "black";
                 ctx.fillText(`x${i + 1}: ${input.toFixed(2)}`, inputLayerX - 75, y);
+                return { x: inputLayerX, y };
             });
 
-            // Dibujar la capa oculta
-            const hiddenSpacing = 70;
-            hiddenOutputs.forEach((output, i) => {
-                const y = layerY - (hiddenOutputs.length / 2 - i) * hiddenSpacing;
+            const hiddenPositions = hiddenOutputs.map((output, i) => {
+                const y = 150 + i * hiddenSpacing;
                 ctx.beginPath();
-                ctx.arc(hiddenLayerX, y, 20, 0, 2 * Math.PI);
-                ctx.fillStyle = "#F39C12";
+                ctx.arc(hiddenLayerX, y, 20, 0, Math.PI * 2);
+                ctx.fillStyle = "#E74C3C";
                 ctx.fill();
                 ctx.stroke();
                 ctx.fillStyle = "black";
-                ctx.fillText(`h${i + 1}: ${output.toFixed(2)}`, hiddenLayerX + 25, y);
+                ctx.fillText(`h${i + 1}: ${output.toFixed(2)}`, hiddenLayerX - 75, y);
+                return { x: hiddenLayerX, y };
             });
 
-            // Dibujar la salida
+            const outputPosition = { x: outputLayerX, y: 300 };
             ctx.beginPath();
-            ctx.arc(outputLayerX, layerY, 20, 0, 2 * Math.PI);
-            ctx.fillStyle = "#28B463";
+            ctx.arc(outputPosition.x, outputPosition.y, 20, 0, Math.PI * 2);
+            ctx.fillStyle = "#2ECC71";
             ctx.fill();
             ctx.stroke();
             ctx.fillStyle = "black";
-            ctx.fillText(`y: ${output.toFixed(2)}`, outputLayerX + 25, layerY);
+            ctx.fillText(`y: ${output.toFixed(2)}`, outputPosition.x - 40, outputPosition.y);
 
-            // Dibujar conexiones entre las capas
-            inputs.forEach((_, i) => {
-                hiddenOutputs.forEach((_, j) => {
-                    const yInput = layerY - (inputs.length / 2 - i) * inputSpacing;
-                    const yHidden = layerY - (hiddenOutputs.length / 2 - j) * hiddenSpacing;
+            inputPositions.forEach(inputPos => {
+                hiddenPositions.forEach(hiddenPos => {
                     ctx.beginPath();
-                    ctx.moveTo(inputLayerX, yInput);
-                    ctx.lineTo(hiddenLayerX, yHidden);
+                    ctx.moveTo(inputPos.x, inputPos.y);
+                    ctx.lineTo(hiddenPos.x, hiddenPos.y);
                     ctx.stroke();
                 });
             });
 
-            hiddenOutputs.forEach((_, i) => {
-                const yHidden = layerY - (hiddenOutputs.length / 2 - i) * hiddenSpacing;
+            hiddenPositions.forEach(hiddenPos => {
                 ctx.beginPath();
-                ctx.moveTo(hiddenLayerX, yHidden);
-                ctx.lineTo(outputLayerX, layerY);
+                ctx.moveTo(hiddenPos.x, hiddenPos.y);
+                ctx.lineTo(outputPosition.x, outputPosition.y);
                 ctx.stroke();
             });
         }
     </script>
 </body>
 </html>
-
-
-
