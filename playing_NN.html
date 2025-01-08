@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 5px;
+            padding: 5px;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .form-container {
+            width: 15%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 1px;
+            box-sizing: border-box;
+        }
+
+        .input-group {
+            margin-bottom: 1px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"] {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .output {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        canvas {
+            width: 85%;
+            height: 100%;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <form id="nn-form">
+                <div class="input-group">
+                    <label for="input1">Tank Level</label>
+                    <input type="number" id="input1" value="65.4" required>
+                </div>
+                <div class="input-group">
+                    <label for="input2">Cl Set</label>
+                    <input type="number" id="input2" value="0.7" required>
+                </div>
+                <div class="input-group">
+                    <label for="input3">Pump</label>
+                    <input type="number" id="input3" value="1" required>
+                </div>
+                <div class="input-group">
+                    <label for="input4">UV%</label>
+                    <input type="number" id="input4" value="34.5615" required>
+                </div>
+                <div class="input-group">
+                    <label for="input5">Flow</label>
+                    <input type="number" id="input5" value="98.9365" required>
+                </div>
+                <div class="input-group">
+                    <label for="input6">Influent Turbidity</label>
+                    <input type="number" id="input6" value="1.93" required>
+                </div>
+                <div class="input-group">
+                    <label for="input7">Effluent Turbidity</label>
+                    <input type="number" id="input7" value="0.88" required>
+                </div>
+                <div class="input-group">
+                    <label for="input8">pH</label>
+                    <input type="number" id="input8" value="8.1" required>
+                </div>
+                <div class="input-group">
+                    <label for="input9">Coagulant PPM</label>
+                    <input type="number" id="input9" value="0.0" required>
+                </div>
+                <button type="button" onclick="calculateOutput()">Calculate</button>
+            </form>
+            <div class="output" id="output"></div>
+        </div>
+
+        <canvas id="nn-canvas" width="800" height="500"></canvas>
+    </div>
+
+    <script>
+        const weightsHidden = [
+            [-1.5254, -2.8213, -2.0056, -0.5310, 0.0872, -2.6420, 2.2675, 1.6801, -2.4497],
+            [0.1749, 1.1470, 0.0110, 0.9485, -0.7185, -0.5225, 0.5567, -3.0506, 0.2267],
+            [-0.9500, -1.6201, 0.7642, -0.7214, 0.0942, -0.7018, 1.4409, 0.2737, -2.2615],
+            [-0.4291, -0.1496, -0.1680, -1.5874, 0.3165, 0.6999, 0.9615, 1.7618, -1.9396],
+            [-0.4147, 1.6260, -0.9535, 1.3389, 0.4307, 0.1598, 0.8035, -1.2008, 1.5433],
+            [2.5432, 2.2072, 0.4781, -2.3549, -0.0015, -0.7786, 0.1003, -0.3360, -4.3691]
+        ];
+
+        const biasesHidden = [2.1953, 0.3133, 2.1811, -0.6922, 5.7215, 2.3570];
+        const weightsOutput = [2.6014, -2.9345, 2.8387, -2.7334, 4.3664, 2.6695];
+        const biasOutput = 4.1839;
+
+        const normalizationData = [
+            { mu: 63.6731, sigma: 13.0110 },
+            { mu: 0.7181, sigma: 0.0714 },
+            { mu: 1.6355, sigma: 0.4813 },
+            { mu: 30.5615, sigma: 4.7297 },
+            { mu: 92.9365, sigma: 5.4898 },
+            { mu: 1.6341, sigma: 1.8581 },
+            { mu: 0.6325, sigma: 0.4388 },
+            { mu: 8.6380, sigma: 0.4105 },
+            { mu: 2.0431, sigma: 5.9868 }
+        ];
+
+        function normalize(value, mu, sigma) {
+            return (value - mu) / sigma;
+        }
+
+        function relu(value) {
+            return Math.max(0, value);
+        }
+
+        function calculateOutput() {
+            const inputs = [
+                parseFloat(document.getElementById("input1").value),
+                parseFloat(document.getElementById("input2").value),
+                parseFloat(document.getElementById("input3").value),
+                parseFloat(document.getElementById("input4").value),
+                parseFloat(document.getElementById("input5").value),
+                parseFloat(document.getElementById("input6").value),
+                parseFloat(document.getElementById("input7").value),
+                parseFloat(document.getElementById("input8").value),
+                parseFloat(document.getElementById("input9").value)
+            ];
+
+            const normalizedInputs = inputs.map((value, index) =>
+                normalize(value, normalizationData[index].mu, normalizationData[index].sigma)
+            );
+
+            const hiddenLayerOutputs = weightsHidden.map((weights, neuronIndex) => {
+                const sum = weights.reduce((acc, weight, inputIndex) => 
+                    acc + weight * normalizedInputs[inputIndex], biasesHidden[neuronIndex]
+                );
+                return relu(sum);
+            });
+
+            const output = hiddenLayerOutputs.reduce((acc, value, index) =>
+                acc + value * weightsOutput[index], biasOutput
+            );
+
+            document.getElementById("output").innerText = `Output: ${output.toFixed(4)}`;
+
+            drawNetwork(normalizedInputs, hiddenLayerOutputs, output);
+        }
+
+        function drawNetwork(inputs, hiddenOutputs, output) {
+            const canvas = document.getElementById("nn-canvas");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const inputLayerX = 100;
+            const hiddenLayerX = 350;
+            const outputLayerX = 600;
+            const layerY = 250;
+
+            const inputSpacing = 50;
+            const hiddenSpacing = 70;
+
+            function normalizeWeight(weight, minWeight, maxWeight) {
+                return Math.abs(weight) / (maxWeight - minWeight) * 3;
+            }
+
+            const allWeights = [...weightsHidden.flat(), ...weightsOutput];
+            const minWeight = Math.min(...allWeights);
+            const maxWeight = Math.max(...allWeights);
+
+            const inputPositions = inputs.map((input, i) => {
+                const y = layerY - (inputs.length / 2 - i) * inputSpacing;
+                ctx.beginPath();
+                ctx.arc(inputLayerX, y, 20, 0, Math.PI * 2);
+                ctx.fillStyle = "#3498DB";
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = "black";
+                ctx.fillText(`x${i + 1}: ${input.toFixed(2)}`, inputLayerX - 75, y);
+                return { x: inputLayerX, y };
+            });
+
+            const hiddenPositions = hiddenOutputs.map((hiddenOutput, i) => {
+                const y = layerY - (hiddenOutputs.length / 2 - i) * hiddenSpacing;
+                ctx.beginPath();
+                ctx.arc(hiddenLayerX, y, 20, 0, Math.PI * 2);
+                ctx.fillStyle = "#F39C12";
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = "black";
+                ctx.fillText(`h${i + 1}: ${hiddenOutput.toFixed(2)}`, hiddenLayerX + 25, y);
+                ctx.fillText(`b: ${biasesHidden[i].toFixed(2)}`, hiddenLayerX, y - 25);
+                return { x: hiddenLayerX, y };
+            });
+
+            const outputPosition = { x: outputLayerX, y: layerY };
+            ctx.beginPath();
+            ctx.arc(outputLayerX, layerY, 20, 0, Math.PI * 2);
+            ctx.fillStyle = "#28B463";
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = "black";
+            ctx.fillText(`y: ${output.toFixed(2)}`, outputLayerX + 25, layerY);
+            ctx.fillText(`b: ${biasOutput.toFixed(2)}`, outputLayerX, layerY - 25);
+
+            inputPositions.forEach((inputPos, i) => {
+                hiddenPositions.forEach((hiddenPos, j) => {
+                    const weight = weightsHidden[j][i];
+                    const normalizedWeight = normalizeWeight(weight, minWeight, maxWeight);
+                    ctx.beginPath();
+                    ctx.moveTo(inputPos.x, inputPos.y);
+                    ctx.lineTo(hiddenPos.x, hiddenPos.y);
+                    ctx.lineWidth = normalizedWeight;
+                    ctx.strokeStyle = weight > 0 ? "blue" : "red";
+                    ctx.stroke();
+                });
+            });
+
+            hiddenPositions.forEach((hiddenPos, i) => {
+                const weight = weightsOutput[i];
+                const normalizedWeight = normalizeWeight(weight, minWeight, maxWeight);
+                ctx.beginPath();
+                ctx.moveTo(hiddenPos.x, hiddenPos.y);
+                ctx.lineTo(outputPosition.x, outputPosition.y);
+                ctx.lineWidth = normalizedWeight;
+                ctx.strokeStyle = weight > 0 ? "blue" : "red";
+                ctx.stroke();
+            });
+        }
+
+        // Dibuja la red neuronal al cargar la página
+        window.onload = function() {
+            calculateOutput();
+        }
+    </script>
+</body>
+</html>	
