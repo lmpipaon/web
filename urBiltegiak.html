@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ura Depositoen Monitorizazioa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #0072ff, #00c6ff);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin: 20px 0;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .tank-container {
+            width: 150px;
+            text-align: center;
+        }
+        .tank {
+            position: relative;
+            width: 100px;
+            height: 200px;
+            margin: 0 auto;
+            border: 3px solid white;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .water {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #4caf50;
+            transition: height 0.5s;
+        }
+        .percentage {
+            margin-top: 10px;
+            font-size: 1.5em;
+        }
+        #lastUpdate {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ura Depositoen Monitorizazioa</h1>
+    <div id="lastUpdate">Azken eguneraketa: --</div>
+    <div class="container">
+        <div class="tank-container">
+            <h2>Depositoa 1</h2>
+            <div class="tank">
+                <div class="water" id="water1" style="height: 0%;"></div>
+            </div>
+            <div class="percentage" id="percentage1">0%</div>
+        </div>
+        <div class="tank-container">
+            <h2>Depositoa 2</h2>
+            <div class="tank">
+                <div class="water" id="water2" style="height: 0%;"></div>
+            </div>
+            <div class="percentage" id="percentage2">0%</div>
+        </div>
+        <div class="tank-container">
+            <h2>Depositoa 3</h2>
+            <div class="tank">
+                <div class="water" id="water3" style="height: 0%;"></div>
+            </div>
+            <div class="percentage" id="percentage3">0%</div>
+        </div>
+    </div>
+
+    <script>
+        const channelID = 1025220;
+        const apiKey = 'HONT6RJG2VNEETZJ';
+        const fields = [2, 3, 4]; // Campos de los depósitos
+        const waterElements = ['water1', 'water2', 'water3'];
+        const percentageElements = ['percentage1', 'percentage2', 'percentage3'];
+        const lastUpdateText = document.getElementById('lastUpdate');
+
+        // Función para actualizar los datos de ThingSpeak
+        async function updateData() {
+            try {
+                const response = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${apiKey}&results=1`);
+                const data = await response.json();
+                const feed = data.feeds[0]; // Última lectura
+                const updatedTime = feed.created_at;
+
+                // Actualizar depósitos
+                fields.forEach((field, index) => {
+                    const value = parseFloat(feed[`field${field}`]) || 0; // Leer valor del campo
+                    const waterHeight = Math.min(Math.max(value, 0), 100); // Limitar a 0-100%
+                    document.getElementById(waterElements[index]).style.height = `${waterHeight}%`;
+                    document.getElementById(percentageElements[index]).innerText = `${waterHeight.toFixed(1)}%`;
+                });
+
+                // Actualizar texto
+                lastUpdateText.innerText = `Azken eguneraketa: ${new Date(updatedTime).toLocaleString('eu')}`;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Actualizar cada 15 segundos
+        updateData(); // Primera actualización
+        setInterval(updateData, 30000);
+    </script>
+</body>
+</html>
+
