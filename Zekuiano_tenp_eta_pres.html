@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenperatura eta presioia Zekuianon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .gauge-container {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 20px;
+        }
+        .gauge {
+            width: 150px;
+            height: 150px;
+            position: relative;
+        }
+        .gauge canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .gauge-label {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            bottom: -20px;
+            font-size: 14px;
+        }
+        .update-time {
+            font-size: 14px;
+            color: #555;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tenperatura eta presioia Zekuianon</h1>
+
+    <div class="gauge-container">
+        <div class="gauge">
+            <canvas id="temperature-gauge"></canvas>
+            <div class="gauge-label">Tenperatura (°C)</div>
+        </div>
+        <div class="gauge">
+            <canvas id="pressure-gauge"></canvas>
+            <div class="gauge-label">Presioa (mbar)</div>
+        </div>
+    </div>
+
+    <div id="update-time" class="update-time">Azken eguneraketa: Kargatzen...</div>
+
+    <script>
+        // ThingSpeak kanalerako informazioa
+        const channelID = 507700;
+        const readAPIKey = 'WM4M8253L53JWXYI';
+
+        // Gauge bat marrazteko funtzioa
+        function drawGauge(canvas, value, min, max, label) {
+            const ctx = canvas.getContext("2d");
+            const width = canvas.width;
+            const height = canvas.height;
+            const radius = Math.min(width, height) / 2 - 10;
+
+            // Canvas-a garbitu (aurreko balioak ezabatzeko)
+            ctx.clearRect(0, 0, width, height);
+
+            // Neurgailuaren arkua marraztu (atzeko kolorea)
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, radius, Math.PI, 2 * Math.PI);
+            ctx.strokeStyle = "#ccc"; // Kolore neutroa
+            ctx.lineWidth = 10; // Lodiera
+            ctx.stroke();
+
+            // Egungo balioaren arkua marraztu
+            const angle = Math.PI + ((value - min) / (max - min)) * Math.PI;
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, radius, Math.PI, angle);
+            ctx.strokeStyle = "#00f"; // Kolore urdina
+            ctx.lineWidth = 10; // Lodiera
+            ctx.stroke();
+
+            // Balioa erakutsi testu gisa
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#000";
+            ctx.textAlign = "center";
+            ctx.fillText(`${value} ${label}`, width / 2, height / 2 + 10);
+        }
+
+        // Neurgailuak eguneratzeko funtzioa
+        function updateGauges(temperature, pressure) {
+            const temperatureCanvas = document.getElementById("temperature-gauge");
+            const pressureCanvas = document.getElementById("pressure-gauge");
+
+            drawGauge(temperatureCanvas, temperature, -15, 45, "°C");
+            drawGauge(pressureCanvas, pressure, 850, 1100, "mbar");
+        }
+
+        // ThingSpeak-etik datuak eskuratzeko funtzioa
+        async function fetchData() {
+            try {
+                const response = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=1`);
+                const data = await response.json();
+
+                if (data.feeds.length > 0) {
+                    const latestEntry = data.feeds[0];
+                    const temperature = parseFloat(latestEntry.field1).toFixed(2); // Tenperatura datua
+                    const pressure = parseFloat(latestEntry.field2).toFixed(2); // Presio datua
+                    const updatedAt = new Date(latestEntry.created_at).toLocaleString(); // Azken eguneraketa
+
+                    // Neurgailuak eguneratu
+                    updateGauges(temperature, pressure);
+
+                    // Azken eguneraketaren informazioa erakutsi
+                    document.getElementById('update-time').innerText = `Azken eguneraketa: ${updatedAt}`;
+                } else {
+                    document.getElementById('update-time').innerText = "Azken eguneraketa: Ez dago daturik";
+                }
+            } catch (error) {
+                console.error("Errorea datuak eskuratzean:", error);
+                document.getElementById('update-time').innerText = "Azken eguneraketa: Errorea datuak eskuratzean";
+            }
+        }
+
+        // Canvas-en tamaina egokitzeko funtzioa
+        function resizeCanvas() {
+            const gauges = document.querySelectorAll(".gauge canvas");
+            gauges.forEach(canvas => {
+                canvas.width = 150; // Zabalera
+                canvas.height = 150; // Altuera
+            });
+        }
+
+        // Orriaren hasierako konfigurazioa
+        document.addEventListener("DOMContentLoaded", () => {
+            resizeCanvas(); // Canvas-en tamaina ezarri
+            fetchData(); // Datuak kargatu hasieran
+            setInterval(fetchData, 60000); // Datuak 60 segunduro eguneratu
+        });
+    </script>
+</body>
+</html>
+
