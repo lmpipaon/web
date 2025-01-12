@@ -7,7 +7,7 @@
     <!-- Bibliotecas necesarias -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/justgage"></script>
-    <script src="https://cdn.jsdelivr.net/npm/raphael"></script>
+    <script src="https://cdn.jsdelivr.net/npm/raphael/raphael.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,10 +15,15 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 30px;
+            margin: 20px;
         }
         .gauge-container {
             width: 300px;
             text-align: center;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .chart-container {
             width: 100%;
@@ -29,7 +34,7 @@
 <body>
     <!-- Contenedor del primer gauge -->
     <div id="gauge1" class="gauge-container">
-        <div id="gaugeDisplay1" style="width: 300px; height: 200px;"></div>
+        <div id="gaugeDisplay1"></div>
         <div class="chart-container">
             <canvas id="chartCanvas1"></canvas>
         </div>
@@ -37,7 +42,7 @@
 
     <!-- Contenedor del segundo gauge -->
     <div id="gauge2" class="gauge-container">
-        <div id="gaugeDisplay2" style="width: 300px; height: 200px;"></div>
+        <div id="gaugeDisplay2"></div>
         <div class="chart-container">
             <canvas id="chartCanvas2"></canvas>
         </div>
@@ -71,7 +76,10 @@
                 min: 0,
                 max: 100,
                 title: data.title,
-                label: 'Porcentaje'
+                label: 'Porcentaje',
+                pointer: true,
+                gaugeWidthScale: 0.6,
+                levelColors: ['#00ff00', '#ffff00', '#ff0000']
             });
 
             // Crear el gráfico
@@ -85,7 +93,8 @@
                         data: data.lastDay, // Datos del último día
                         borderColor: 'blue',
                         backgroundColor: 'rgba(0, 0, 255, 0.2)',
-                        tension: 0.4
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
                 options: {
