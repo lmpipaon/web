@@ -32,12 +32,24 @@
             bottom: -20px;
             font-size: 14px;
         }
+        .charts-container {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 40px;
+        }
+        canvas {
+            max-width: 400px;
+            max-height: 300px;
+        }
         .update-time {
             font-size: 14px;
             color: #555;
             margin-top: 20px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
     <h1>Tenperatura eta presioia Zekuianon</h1>
@@ -55,44 +67,42 @@
 
     <div id="update-time" class="update-time">Azken eguneraketa: Kargatzen...</div>
 
+    <div class="charts-container">
+        <canvas id="temperature-chart"></canvas>
+        <canvas id="pressure-chart"></canvas>
+    </div>
+
     <script>
-        // ThingSpeak kanalerako informazioa
         const channelID = 507700;
         const readAPIKey = 'WM4M8253L53JWXYI';
+        let temperatureChart, pressureChart;
 
-        // Gauge bat marrazteko funtzioa
         function drawGauge(canvas, value, min, max, label) {
             const ctx = canvas.getContext("2d");
             const width = canvas.width;
             const height = canvas.height;
             const radius = Math.min(width, height) / 2 - 10;
 
-            // Canvas-a garbitu (aurreko balioak ezabatzeko)
             ctx.clearRect(0, 0, width, height);
-
-            // Neurgailuaren arkua marraztu (atzeko kolorea)
             ctx.beginPath();
             ctx.arc(width / 2, height / 2, radius, Math.PI, 2 * Math.PI);
-            ctx.strokeStyle = "#ccc"; // Kolore neutroa
-            ctx.lineWidth = 10; // Lodiera
+            ctx.strokeStyle = "#ccc";
+            ctx.lineWidth = 10;
             ctx.stroke();
 
-            // Egungo balioaren arkua marraztu
             const angle = Math.PI + ((value - min) / (max - min)) * Math.PI;
             ctx.beginPath();
             ctx.arc(width / 2, height / 2, radius, Math.PI, angle);
-            ctx.strokeStyle = "#00f"; // Kolore urdina
-            ctx.lineWidth = 10; // Lodiera
+            ctx.strokeStyle = "#00f";
+            ctx.lineWidth = 10;
             ctx.stroke();
 
-            // Balioa erakutsi testu gisa
             ctx.font = "16px Arial";
             ctx.fillStyle = "#000";
             ctx.textAlign = "center";
             ctx.fillText(`${value} ${label}`, width / 2, height / 2 + 10);
         }
 
-        // Neurgailuak eguneratzeko funtzioa
         function updateGauges(temperature, pressure) {
             const temperatureCanvas = document.getElementById("temperature-gauge");
             const pressureCanvas = document.getElementById("pressure-gauge");
@@ -101,7 +111,97 @@
             drawGauge(pressureCanvas, pressure, 850, 1100, "mbar");
         }
 
-        // ThingSpeak-etik datuak eskuratzeko funtzioa
+        async function fetchHistoricalData() {
+            try {
+                const response = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=1008`);
+                const data = await response.json();
+                const feeds = data.feeds;
+
+                const timestamps = feeds.map(entry => new Date(entry.created_at));
+                const temperatures = feeds.map(entry => parseFloat(entry.field1));
+                const pressures = feeds.map(entry => parseFloat(entry.field2));
+
+                updateCharts(timestamps, temperatures, pressures);
+            } catch (error) {
+                console.error("Errorea historial datuak eskuratzean:", error);
+            }
+        }
+
+        function updateCharts(timestamps, temperatures, pressures) {
+            const temperatureCtx = document.getElementById("temperature-chart").getContext("2d");
+            const pressureCtx = document.getElementById("pressure-chart").getContext("2d");
+
+            if (!temperatureChart) {
+                temperatureChart = new Chart(temperatureCtx, {
+                    type: 'line',
+                    data: {
+                        labels: timestamps,
+                        datasets: [{
+                            label: 'Tenperatura (°C)',
+                            data: temperatures,
+                            borderColor: 'red',
+                            borderWidth: 1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: { unit: 'day' },
+                                title: { display: true, text: 'Denbora' }
+                            },
+                            y: {
+                                suggestedMin: Math.min(...temperatures) - 5,
+                                suggestedMax: Math.max(...temperatures) + 5,
+                                title: { display: true, text: 'Tenperatura (°C)' }
+                            }
+                        }
+                    }
+                });
+            } else {
+                temperatureChart.data.labels = timestamps;
+                temperatureChart.data.datasets[0].data = temperatures;
+                temperatureChart.update();
+            }
+
+            if (!pressureChart) {
+                pressureChart = new Chart(pressureCtx, {
+                    type: 'line',
+                    data: {
+                        labels: timestamps,
+                        datasets: [{
+                            label: 'Presioa (mbar)',
+                            data: pressures,
+                            borderColor: 'blue',
+                            borderWidth: 1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: { unit: 'day' },
+                                title: { display: true, text: 'Denbora' }
+                            },
+                            y: {
+                                suggestedMin: Math.min(...pressures) - 10,
+                                suggestedMax: Math.max(...pressures) + 10,
+                                title: { display: true, text: 'Presioa (mbar)' }
+                            }
+                        }
+                    }
+                });
+            } else {
+                pressureChart.data.labels = timestamps;
+                pressureChart.data.datasets[0].data = pressures;
+                pressureChart.update();
+            }
+        }
+
         async function fetchData() {
             try {
                 const response = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=1`);
@@ -109,14 +209,11 @@
 
                 if (data.feeds.length > 0) {
                     const latestEntry = data.feeds[0];
-                    const temperature = parseFloat(latestEntry.field1).toFixed(2); // Tenperatura datua
-                    const pressure = parseFloat(latestEntry.field2).toFixed(2); // Presio datua
-                    const updatedAt = new Date(latestEntry.created_at).toLocaleString(); // Azken eguneraketa
+                    const temperature = parseFloat(latestEntry.field1).toFixed(2);
+                    const pressure = parseFloat(latestEntry.field2).toFixed(2);
+                    const updatedAt = new Date(latestEntry.created_at).toLocaleString();
 
-                    // Neurgailuak eguneratu
                     updateGauges(temperature, pressure);
-
-                    // Azken eguneraketaren informazioa erakutsi
                     document.getElementById('update-time').innerText = `Azken eguneraketa: ${updatedAt}`;
                 } else {
                     document.getElementById('update-time').innerText = "Azken eguneraketa: Ez dago daturik";
@@ -127,22 +224,11 @@
             }
         }
 
-        // Canvas-en tamaina egokitzeko funtzioa
-        function resizeCanvas() {
-            const gauges = document.querySelectorAll(".gauge canvas");
-            gauges.forEach(canvas => {
-                canvas.width = 150; // Zabalera
-                canvas.height = 150; // Altuera
-            });
-        }
-
-        // Orriaren hasierako konfigurazioa
         document.addEventListener("DOMContentLoaded", () => {
-            resizeCanvas(); // Canvas-en tamaina ezarri
-            fetchData(); // Datuak kargatu hasieran
-            setInterval(fetchData, 60000); // Datuak 60 segunduro eguneratu
+            fetchData();
+            fetchHistoricalData();
+            setInterval(fetchData, 60000);
         });
     </script>
 </body>
 </html>
-
