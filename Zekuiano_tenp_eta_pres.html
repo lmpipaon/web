@@ -78,19 +78,24 @@
         const readAPIKey = 'WM4M8253L53JWXYI';
         let temperatureChart, pressureChart;
 
+        // Functio to draw the gauges
         function drawGauge(canvas, value, min, max, label) {
             const ctx = canvas.getContext("2d");
             const width = canvas.width;
             const height = canvas.height;
             const radius = Math.min(width, height) / 2 - 10;
 
+            // Clear canvas
             ctx.clearRect(0, 0, width, height);
+
+            // Draw background arc
             ctx.beginPath();
             ctx.arc(width / 2, height / 2, radius, Math.PI, 2 * Math.PI);
             ctx.strokeStyle = "#ccc";
             ctx.lineWidth = 10;
             ctx.stroke();
 
+            // Draw value arc
             const angle = Math.PI + ((value - min) / (max - min)) * Math.PI;
             ctx.beginPath();
             ctx.arc(width / 2, height / 2, radius, Math.PI, angle);
@@ -98,6 +103,7 @@
             ctx.lineWidth = 10;
             ctx.stroke();
 
+            // Draw value text
             ctx.font = "16px Arial";
             ctx.fillStyle = "#000";
             ctx.textAlign = "center";
@@ -132,7 +138,7 @@
             const temperatureCtx = document.getElementById("temperature-chart").getContext("2d");
             const pressureCtx = document.getElementById("pressure-chart").getContext("2d");
 
-            const locale = 'eu'; // Euskarazko hizkuntza
+            const locale = window.dateFnsLocale_eu;
 
             if (!temperatureChart) {
                 temperatureChart = new Chart(temperatureCtx, {
@@ -153,7 +159,7 @@
                             x: {
                                 type: 'time',
                                 adapters: {
-                                    date: { locale: window.dateFnsLocale_eu }
+                                    date: { locale: locale }
                                 },
                                 time: { unit: 'day' },
                                 title: { display: true, text: 'Denbora' }
@@ -191,7 +197,7 @@
                             x: {
                                 type: 'time',
                                 adapters: {
-                                    date: { locale: window.dateFnsLocale_eu }
+                                    date: { locale: locale }
                                 },
                                 time: { unit: 'day' },
                                 title: { display: true, text: 'Denbora' }
@@ -220,9 +226,10 @@
                     const latestEntry = data.feeds[0];
                     const temperature = parseFloat(latestEntry.field1).toFixed(2);
                     const pressure = parseFloat(latestEntry.field2).toFixed(2);
-                    const updatedAt = new Date(latestEntry.created_at).toLocaleString();
+                    const updatedAt = new Date(latestEntry.created_at).toLocaleString('eu');
 
                     updateGauges(temperature, pressure);
+
                     document.getElementById('update-time').innerText = `Azken eguneraketa: ${updatedAt}`;
                 } else {
                     document.getElementById('update-time').innerText = "Azken eguneraketa: Ez dago daturik";
