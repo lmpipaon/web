@@ -1,1 +1,1 @@
-ikasteko nire web orria
+Web orriak
