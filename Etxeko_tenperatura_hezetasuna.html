@@ -9,21 +9,64 @@
     <!-- Date adapter -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin: 20px 0;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+
+        .gauges, .charts {
+            display: grid;
+            gap: 20px;
+            margin: 20px;
+        }
+
+        /* En pantallas grandes (ordenadores), organiza en dos columnas */
+        @media (min-width: 768px) {
+            .gauges {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .gauge, .chart {
+            text-align: center;
+        }
+
         canvas {
-            max-width: 300px;
-            max-height: 200px;
+            max-width: 100%;
+            height: auto;
             margin: 0 auto;
             display: block;
         }
-        div {
-            text-align: center;
-            margin-bottom: 30px;
+
+        p {
+            margin: 5px 0;
+            font-size: 1rem;
         }
-        body {
-            font-family: Arial, sans-serif;
+
+        #tempValue, #humValue {
+            font-size: 1.2rem;
+            font-weight: bold;
         }
-        h1, h2 {
-            text-align: center;
+
+        #tempLastUpdated, #humLastUpdated {
+            font-size: 0.9rem;
+            color: #555;
         }
     </style>
 </head>
@@ -31,29 +74,33 @@
     <h1>Tenperatura eta Hezetasunaren Jarraipena</h1>
 
     <!-- Gauge-ak -->
-    <div>
-        <h2>Tenperatura</h2>
-        <canvas id="tempGauge"></canvas>
-        <p id="tempValue" style="font-size: 18px; font-weight: bold;"></p>
-        <p id="tempLastUpdated" style="font-size: 14px;"></p>
-    </div>
+    <div class="gauges">
+        <div class="gauge">
+            <h2>Tenperatura</h2>
+            <canvas id="tempGauge"></canvas>
+            <p id="tempValue"></p>
+            <p id="tempLastUpdated"></p>
+        </div>
 
-    <div>
-        <h2>Hezetasuna</h2>
-        <canvas id="humGauge"></canvas>
-        <p id="humValue" style="font-size: 18px; font-weight: bold;"></p>
-        <p id="humLastUpdated" style="font-size: 14px;"></p>
+        <div class="gauge">
+            <h2>Hezetasuna</h2>
+            <canvas id="humGauge"></canvas>
+            <p id="humValue"></p>
+            <p id="humLastUpdated"></p>
+        </div>
     </div>
 
     <!-- Grafikoak -->
-    <div>
-        <h2>Tenperatura azken 3 egunetan</h2>
-        <canvas id="tempChart"></canvas>
-    </div>
+    <div class="charts">
+        <div class="chart">
+            <h2>Tenperatura azken 3 egunetan</h2>
+            <canvas id="tempChart"></canvas>
+        </div>
 
-    <div>
-        <h2>Hezetasuna azken 3 egunetan</h2>
-        <canvas id="humChart"></canvas>
+        <div class="chart">
+            <h2>Hezetasuna azken 3 egunetan</h2>
+            <canvas id="humChart"></canvas>
+        </div>
     </div>
 
     <script>
@@ -68,25 +115,23 @@
 
             const feeds = data.feeds;
 
-            // Datuak irakurri eta parseatu
             const tempData = feeds
                 .map(feed => ({
-                    time: new Date(feed.created_at), // Denbora formatua
-                    value: parseFloat(feed.field1) // Tenperatura
+                    time: new Date(feed.created_at),
+                    value: parseFloat(feed.field1)
                 }))
-                .filter(item => !isNaN(item.value)); // Balio egokiak soilik
+                .filter(item => !isNaN(item.value));
 
             const humData = feeds
                 .map(feed => ({
-                    time: new Date(feed.created_at), // Denbora formatua
-                    value: parseFloat(feed.field2) // Hezetasuna
+                    time: new Date(feed.created_at),
+                    value: parseFloat(feed.field2)
                 }))
-                .filter(item => !isNaN(item.value)); // Balio egokiak soilik
+                .filter(item => !isNaN(item.value));
 
             return { tempData, humData };
         }
 
-        // Plugin para dibujar el texto de mínimo y máximo
         Chart.register({
             id: 'doughnutLabels',
             beforeDraw(chart) {
@@ -95,7 +140,6 @@
                 const minValue = chart.data.datasets[0].minValue;
                 const maxValue = chart.data.datasets[0].maxValue;
 
-                // Coordenadas para el texto
                 const xCenter = width / 2;
                 const yCenter = chart.chartArea.bottom;
 
@@ -104,16 +148,12 @@
                 ctx.font = '14px Arial';
                 ctx.fillStyle = '#666';
 
-                // Texto del valor mínimo (izquierda)
                 ctx.fillText(minValue, xCenter - 85, yCenter - 10);
-
-                // Texto del valor máximo (derecha)
                 ctx.fillText(maxValue, xCenter + 85, yCenter - 10);
                 ctx.restore();
             }
         });
 
-        // Gauge-ak sortu
         function createGauge(canvasId, label, max, min) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             return new Chart(ctx, {
@@ -147,7 +187,6 @@
         const tempGauge = createGauge('tempGauge', 'Tenperatura (°C)', 50, 0);
         const humGauge = createGauge('humGauge', 'Hezetasuna (%)', 100, 0);
 
-        // Line grafikoak sortu
         function createChart(canvasId, label, color) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             return new Chart(ctx, {
@@ -184,15 +223,13 @@
         const tempChart = createChart('tempChart', 'Tenperatura (°C)', 'red');
         const humChart = createChart('humChart', 'Hezetasuna (%)', 'blue');
 
-        // Datuak eguneratu
         async function updateData() {
             const { tempData, humData } = await fetchData();
 
-            // Actualizar los gauges con los valores proporcionales
             if (tempData.length > 0) {
                 const lastTemp = tempData[tempData.length - 1];
                 tempGauge.data.datasets[0].data = [
-                    lastTemp.value, 
+                    lastTemp.value,
                     tempGauge.data.datasets[0].maxValue - lastTemp.value
                 ];
                 tempGauge.update();
@@ -205,7 +242,7 @@
             if (humData.length > 0) {
                 const lastHum = humData[humData.length - 1];
                 humGauge.data.datasets[0].data = [
-                    lastHum.value, 
+                    lastHum.value,
                     humGauge.data.datasets[0].maxValue - lastHum.value
                 ];
                 humGauge.update();
@@ -215,7 +252,6 @@
                     `Azken eguneraketa: ${lastHum.time.toLocaleString()}`;
             }
 
-            // Grafikoak eguneratu
             tempChart.data.labels = tempData.map(d => d.time);
             tempChart.data.datasets[0].data = tempData.map(d => d.value);
             tempChart.update();
@@ -225,7 +261,6 @@
             humChart.update();
         }
 
-        // Lehen aldiz eguneratu eta automatikoki 5 minutuz behin eguneratu
         updateData();
         setInterval(updateData, 5 * 60 * 1000);
     </script>
