@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenperatura eta Hezetasunaren Grafikoak</title>
+    <!-- Chart.js liburutegia -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Date adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        canvas {
+            max-width: 300px;
+            max-height: 200px;
+            margin: 0 auto;
+            display: block;
+        }
+        div {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .last-updated {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tenperatura eta Hezetasunaren Jarraipena</h1>
+
+    <!-- Gauge-ak -->
+    <div>
+        <h2>Tenperatura</h2>
+        <canvas id="tempGauge"></canvas>
+        <p id="tempValue" style="font-size: 18px; font-weight: bold;"></p>
+        <p id="tempLastUpdated" class="last-updated"></p>
+    </div>
+
+    <div>
+        <h2>Hezetasuna</h2>
+        <canvas id="humGauge"></canvas>
+        <p id="humValue" style="font-size: 18px; font-weight: bold;"></p>
+        <p id="humLastUpdated" class="last-updated"></p>
+    </div>
+
+    <!-- Grafikoak -->
+    <div>
+        <h2>Tenperatura azken 3 egunetan</h2>
+        <canvas id="tempChart"></canvas>
+    </div>
+
+    <div>
+        <h2>Hezetasuna azken 3 egunetan</h2>
+        <canvas id="humChart"></canvas>
+    </div>
+
+    <script>
+        const channelId = 2813413;
+        const apiKey = "KUHQK7M4ZNRCBJXN";
+
+        // ThingSpeak-etik datuak eskuratu
+        async function fetchData() {
+            const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${apiKey}&results=1000`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const feeds = data.feeds;
+
+            // Datuak irakurri eta parseatu
+            const tempData = feeds
+                .map(feed => ({
+                    time: new Date(feed.created_at), // Denbora formatua
+                    value: parseFloat(feed.field1) // Tenperatura
+                }))
+                .filter(item => !isNaN(item.value)); // Balio egokiak soilik
+
+            const humData = feeds
+                .map(feed => ({
+                    time: new Date(feed.created_at), // Denbora formatua
+                    value: parseFloat(feed.field2) // Hezetasuna
+                }))
+                .filter(item => !isNaN(item.value)); // Balio egokiak soilik
+
+            return { tempData, humData };
+        }
+
+        // Plugin para dibujar el texto de mínimo y máximo
+        Chart.register({
+            id: 'doughnutLabels',
+            beforeDraw(chart) {
+                const { width } = chart;
+                const { ctx } = chart;
+                const minValue = chart.data.datasets[0].minValue;
+                const maxValue = chart.data.datasets[0].maxValue;
+
+                // Coordenadas para el texto
+                const xCenter = width / 2;
+                const yCenter = chart.chartArea.bottom;
+
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#666';
+
+                // Texto del valor mínimo (izquierda)
+                ctx.fillText(minValue, xCenter - 85, yCenter - 10);
+
+                // Texto del valor máximo (derecha)
+                ctx.fillText(maxValue, xCenter + 85, yCenter - 10);
+                ctx.restore();
+            }
+        });
+
+        // Gauge-ak sortu
+        function createGauge(canvasId, label, max, min) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, max],
+                        backgroundColor: ['#FF6384', '#EAEAEA'],
+                        borderWidth: 5,
+                        minValue: min,
+                        maxValue: max
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '80%',
+                    rotation: -90,
+                    circumference: 180,
+                    plugins: {
+                        tooltip: { enabled: false },
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: label
+                        }
+                    }
+                }
+            });
+        }
+
+        const tempGauge = createGauge('tempGauge', 'Tenperatura (°C)', 50, 0);
+        const humGauge = createGauge('humGauge', 'Hezetasuna (%)', 100, 0);
+
+        // Line grafikoak sortu
+        function createChart(canvasId, label, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        borderColor: color,
+                        backgroundColor: color,
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                tooltipFormat: 'dd/MM/yyyy HH:mm'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        const tempChart = createChart('tempChart', 'Tenperatura (°C)', 'red');
+        const humChart = createChart('humChart', 'Hezetasuna (%)', 'blue');
+
+        // Datuak eguneratu
+        async function updateData() {
+            const { tempData, humData } = await fetchData();
+
+            // Gauge-ak eguneratu azken balioarekin
+            if (tempData.length > 0) {
+                const lastTemp = tempData[tempData.length - 1];
+                tempGauge.data.datasets[0].data[0] = lastTemp.value;
+                tempGauge.update();
+
+                document.getElementById('tempValue').innerText = `${lastTemp.value.toFixed(1)} °C`;
+                document.getElementById('tempLastUpdated').innerText = `Azken eguneraketa: ${lastTemp.time.toLocaleString()}`;
+            }
+
+            if (humData.length > 0) {
+                const lastHum = humData[tempData.length - 1];
+                humGauge.data.datasets[0].data[0] = lastHum.value;
+                humGauge.update();
+
+                document.getElementById('humValue').innerText = `${lastHum.value.toFixed(1)} %`;
+                document.getElementById('humLastUpdated').innerText = `Azken eguneraketa: ${lastHum.time.toLocaleString()}`;
+            }
+
+            // Grafikoak eguneratu
+            tempChart.data.labels = tempData.map(d => d.time);
+            tempChart.data.datasets[0].data = tempData.map(d => d.value);
+            tempChart.update();
+
+            humChart.data.labels = humData.map(d => d.time);
+            humChart.data.datasets[0].data = humData.map(d => d.value);
+            humChart.update();
+        }
+
+        // Lehen aldiz eguneratu eta automatikoki 5 minutuz behin eguneratu
+        updateData();
+        setInterval(updateData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
