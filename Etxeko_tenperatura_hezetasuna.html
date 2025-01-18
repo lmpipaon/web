@@ -193,23 +193,31 @@
         async function updateData() {
             const { tempData, humData } = await fetchData();
 
-            // Gauge-ak eguneratu azken balioarekin
+            // Actualizar los gauges con los valores proporcionales
             if (tempData.length > 0) {
                 const lastTemp = tempData[tempData.length - 1];
-                tempGauge.data.datasets[0].data[0] = lastTemp.value;
+                tempGauge.data.datasets[0].data = [
+                    lastTemp.value, 
+                    tempGauge.data.datasets[0].maxValue - lastTemp.value
+                ];
                 tempGauge.update();
 
                 document.getElementById('tempValue').innerText = `${lastTemp.value.toFixed(1)} °C`;
-                document.getElementById('tempLastUpdated').innerText = `Azken eguneraketa: ${lastTemp.time.toLocaleString()}`;
+                document.getElementById('tempLastUpdated').innerText = 
+                    `Azken eguneraketa: ${lastTemp.time.toLocaleString()}`;
             }
 
             if (humData.length > 0) {
-                const lastHum = humData[tempData.length - 1];
-                humGauge.data.datasets[0].data[0] = lastHum.value;
+                const lastHum = humData[humData.length - 1];
+                humGauge.data.datasets[0].data = [
+                    lastHum.value, 
+                    humGauge.data.datasets[0].maxValue - lastHum.value
+                ];
                 humGauge.update();
 
                 document.getElementById('humValue').innerText = `${lastHum.value.toFixed(1)} %`;
-                document.getElementById('humLastUpdated').innerText = `Azken eguneraketa: ${lastHum.time.toLocaleString()}`;
+                document.getElementById('humLastUpdated').innerText = 
+                    `Azken eguneraketa: ${lastHum.time.toLocaleString()}`;
             }
 
             // Grafikoak eguneratu
