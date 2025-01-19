@@ -1,1 +1,253 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenperatura eta Hezetasunaren Grafikoak</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin: 20px 0;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+
+        .gauges, .charts {
+            display: grid;
+            gap: 20px;
+            margin: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .gauges {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .gauge, .chart {
+            text-align: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+        }
+
+        p {
+            margin: 5px 0;
+            font-size: 1rem;
+        }
+
+        #tempValue, #humValue {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #tempLastUpdated, #humLastUpdated {
+            font-size: 0.9rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tenperatura eta Hezetasunaren Jarraipena</h1>
+
+    <!-- Gauges -->
+    <div class="gauges">
+        <div class="gauge">
+            <h2>Tenperatura</h2>
+            <canvas id="tempGauge"></canvas>
+            <p id="tempValue"></p>
+            <p id="tempLastUpdated"></p>
+        </div>
+
+        <div class="gauge">
+            <h2>Hezetasuna</h2>
+            <canvas id="humGauge"></canvas>
+            <p id="humValue"></p>
+            <p id="humLastUpdated"></p>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts">
+        <div class="chart">
+            <h2>Tenperatura azken 3 egunetan</h2>
+            <canvas id="tempChart"></canvas>
+        </div>
+
+        <div class="chart">
+            <h2>Hezetasuna azken 3 egunetan</h2>
+            <canvas id="humChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const channelId = 2813413;
+        const apiKey = "KUHQK7M4ZNRCBJXN";
+
+        // Fetch data from ThingSpeak
+        async function fetchData() {
+            const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${apiKey}&results=1000`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const feeds = data.feeds;
+
+            const tempData = feeds
+                .map(feed => ({
+                    time: new Date(feed.created_at),
+                    value: parseFloat(feed.field1)
+                }))
+                .filter(item => !isNaN(item.value));
+
+            const humData = feeds
+                .map(feed => ({
+                    time: new Date(feed.created_at),
+                    value: parseFloat(feed.field2)
+                }))
+                .filter(item => !isNaN(item.value));
+
+            return { tempData, humData };
+        }
+
+        // Function to determine gauge color
+        function getTempGaugeColor(value) {
+            if (value <= 10) return '#4FC3F7'; // Azul: Muy frío
+            if (value <= 20) return '#81C784'; // Verde: Templado
+            if (value <= 30) return '#FFEB3B'; // Amarillo: Cálido
+            return '#F44336'; // Rojo: Calor extremo
+        }
+
+        function getHumGaugeColor(value) {
+            if (value <= 25) return '#F44336'; // Rojo: Muy seco
+            if (value <= 50) return '#FFC107'; // Amarillo: Moderadamente seco
+            if (value <= 75) return '#4CAF50'; // Verde: Óptimo
+            return '#2196F3'; // Azul: Muy húmedo
+        }
+
+        // Create a gauge
+        function createGauge(canvasId, max) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, max],
+                        backgroundColor: ['#EAEAEA', '#EAEAEA'], // Default color
+                        borderWidth: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '80%',
+                    rotation: -90,
+                    circumference: 180,
+                    plugins: {
+                        tooltip: { enabled: false },
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        const tempGauge = createGauge('tempGauge', 50);
+        const humGauge = createGauge('humGauge', 100);
+
+        // Create a chart
+        function createChart(canvasId, label, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        borderColor: color,
+                        backgroundColor: color,
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: { unit: 'hour', tooltipFormat: 'dd/MM/yyyy HH:mm' }
+                        },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        const tempChart = createChart('tempChart', 'Tenperatura (°C)', 'red');
+        const humChart = createChart('humChart', 'Hezetasuna (%)', 'blue');
+
+        // Update data and gauges
+        async function updateData() {
+            const { tempData, humData } = await fetchData();
+
+            if (tempData.length > 0) {
+                const lastTemp = tempData[tempData.length - 1];
+                const tempColor = getTempGaugeColor(lastTemp.value);
+
+                tempGauge.data.datasets[0].data = [
+                    lastTemp.value,
+                    tempGauge.data.datasets[0].data[1] - lastTemp.value
+                ];
+                tempGauge.data.datasets[0].backgroundColor = [tempColor, '#EAEAEA'];
+                tempGauge.update();
+
+                document.getElementById('tempValue').innerText = `${lastTemp.value.toFixed(1)} °C`;
+                document.getElementById('tempLastUpdated').innerText = `Azken eguneraketa: ${lastTemp.time.toLocaleString()}`;
+            }
+
+            if (humData.length > 0) {
+                const lastHum = humData[humData.length - 1];
+                const humColor = getHumGaugeColor(lastHum.value);
+
+                humGauge.data.datasets[0].data = [
+                    lastHum.value,
+                    humGauge.data.datasets[0].data[1] - lastHum.value
+                ];
+                humGauge.data.datasets[0].backgroundColor = [humColor, '#EAEAEA'];
+                humGauge.update();
+
+                document.getElementById('humValue').innerText = `${lastHum.value.toFixed(1)} %`;
+                document.getElementById('humLastUpdated').innerText = `Azken eguneraketa: ${lastHum.time.toLocaleString()}`;
+            }
+
+            tempChart.data.labels = tempData.map(d => d.time);
+            tempChart.data.datasets[0].data = tempData.map(d => d.value);
+            tempChart.update();
+
+            humChart.data.labels = humData.map(d => d.time);
+            humChart.data.datasets[0].data = humData.map(d => d.value);
+            humChart.update();
+        }
+
+        updateData();
+        setInterval(updateData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
