@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThingSpeak Datuak</title>
+    <style>
+        /* Gorputzaren estiloak */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Kanpo-div-a: irudia eta posizioak erreferentzia moduan */
+        #background-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: url('hornidura_orokorra.png') no-repeat center center fixed;
+            background-size: contain;
+        }
+
+        /* Datuen posizioak eta estiloak */
+        .field-value {
+            position: absolute;
+            color: black;
+            font-size: 1.5vh;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        /* Azken eguneratzea */
+        #last-update {
+            position: absolute;
+            bottom: 0%;
+            right: 0%;
+            color: black;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.5vw;
+            border-radius: 5px;
+            font-size: 1.2vh;
+        }
+
+        /* Kurtsorearen bistaratzea */
+        #cursor-position {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            color: black;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.5vw;
+            border-radius: 5px;
+            font-size: 1.2vh;
+        }
+    </style>
+</head>
+<body>
+    <!-- Irudiaren eta testuen erreferentzia-div-a -->
+    <div id="background-container">
+        <!-- JavaScript kargatzen ari den mezua -->
+        <p id="loading" style="color: black; text-align: center; margin-top: 20px;">
+            Datuak kargatzen ari dira, itxaron mesedez...
+        </p>
+
+        <!-- Azken eguneratze denbora bistaratzeko leku bat -->
+        <div id="last-update"></div>
+
+        <!-- Kurtsorearen posizioa bistaratzeko leku bat -->
+        <div id="cursor-position">Kurtsorearen posizioa: (x: -, y: -)</div>
+    </div>
+
+    <script>
+        // ThingSpeak kanalen konfigurazioa
+        const CHANNELS = [
+            { id: 1025220, apiKey: 'HONT6RJG2VNEETZJ' },
+            { id: 1025550, apiKey: 'N9VZMFEQYL1FK9NC' }
+        ];
+
+        // Aldagai globalak datuak gordetzeko
+        let Gardelegi_Maila, Araka_Biltegi1, Araka_Biltegi2, Araka_Biltegi3, Araka_Biltegi_zaharra, Araka_Q1_Gasteiz, Araka_Q2_Gasteiz, Araka_Q_Albinatik;
+        let Militarrak_1, Militarrak_2, Ullibarri_NTU, Araka_Cl_Irtera, Gorbea_Irterako_Presioia, Araka_Cl_Tratatua, Albinaruntz_Q, Araka_Q_Gasteiz;
+        let Arakan_bildutako_ura;
+
+        // Datuak ThingSpeak API-tik eskuratzeko funtzioa
+        async function getThingSpeakData(channel_n) {
+            try {
+                const channel = CHANNELS[channel_n];
+                const response = await fetch(`https://api.thingspeak.com/channels/${channel.id}/feeds.json?api_key=${channel.apiKey}&results=1`);
+                const data = await response.json();
+
+                // Convierte los valores en floats si son válidos, de lo contrario asigna `null`
+                const parseField = (field) => (field !== null && field !== undefined && !isNaN(parseFloat(field))) ? parseFloat(field) : null;
+
+                if (channel_n === 0) {
+                    Gardelegi_Maila = parseField(data.feeds[0].field1);
+                    Araka_Biltegi1 = parseField(data.feeds[0].field2);
+                    Araka_Biltegi2 = parseField(data.feeds[0].field3);
+                    Araka_Biltegi3 = parseField(data.feeds[0].field4);
+                    Araka_Biltegi_zaharra = parseField(data.feeds[0].field5);
+                    Araka_Q1_Gasteiz = parseField(data.feeds[0].field6);
+                    Araka_Q2_Gasteiz = parseField(data.feeds[0].field7);
+                    Araka_Q_Albinatik = parseField(data.feeds[0].field8);
+                    if ( (Araka_Biltegi1 !== null) && (Araka_Biltegi2 !== null) && (Araka_Biltegi2 !== null) ) {
+                        Arakan_bildutako_ura=(Araka_Biltegi1+Araka_Biltegi2+Araka_Biltegi3)/300.0*90000.0;
+                    } else {
+                     Arakan_bildutako_ura=null;
+                    }
+                } else if (channel_n === 1) {
+                    Militarrak_1 = parseField(data.feeds[0].field1);
+                    Militarrak_2 = parseField(data.feeds[0].field2);
+                    Ullibarri_NTU = parseField(data.feeds[0].field3);
+                    Araka_Cl_Irtera = parseField(data.feeds[0].field4);
+                    Gorbea_Irterako_Presioia = parseField(data.feeds[0].field5);
+                    Araka_Cl_Tratatua = parseField(data.feeds[0].field6);
+                    Albinaruntz_Q = parseField(data.feeds[0].field7);
+                    Araka_Q_Gasteiz = parseField(data.feeds[0].field8);
+                }
+
+                return new Date(data.feeds[0].created_at).toLocaleString('eu');
+            } catch (error) {
+                console.error(`Errorea ThingSpeak kanalaren (${channel.id}) datuak eskuratzean:`, error);
+                return null;
+            }
+        }
+
+        // Datuak pantailan erakusteko funtzioa
+        function displayData() {
+            const container = document.getElementById('background-container');
+            if ( Arakan_bildutako_ura) {
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+                //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
+                field4Element.innerHTML = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
+                field4Element.style.left = '45%';
+                field4Element.style.top = '50%';
+                container.appendChild(field4Element);
+            }
+            if ( Albinaruntz_Q) {
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+                //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
+                field4Element.innerHTML = `${Albinaruntz_Q.toFixed(2)} m<sup>3</sup>/h`;
+                field4Element.style.left = '59%';
+                field4Element.style.top = '35%';
+                container.appendChild(field4Element);
+            }
+            if ( Araka_Q_Gasteiz) {
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+                //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
+                field4Element.innerHTML = `${Araka_Q_Gasteiz.toFixed(2)} m<sup>3</sup>/h`;
+                field4Element.style.left = '54%';
+                field4Element.style.top = '65%';
+                container.appendChild(field4Element);
+            }
+        }
+
+        // Kurtsorearen posizioa bistaratzeko funtzioa
+        document.addEventListener('click', (event) => {
+            const cursorPosition = document.getElementById('cursor-position');
+            cursorPosition.textContent = `Kurtsorearen posizioa: (x: ${(event.clientX/19.06).toFixed(0)}, y: ${(event.clientY/9.2541).toFixed(0)})`;
+        });
+
+        // Programa nagusia
+        async function main() {
+            const lastUpdate1 = await getThingSpeakData(0);
+            const lastUpdate2 = await getThingSpeakData(1);
+
+            displayData();
+
+            // Azken eguneratzea eguneratu
+            const lastUpdate = lastUpdate1 || lastUpdate2 || 'Eguneraketarik ez';
+            document.getElementById('last-update').textContent = `Azken eguneratzea: ${lastUpdate}`;
+
+            // Kargatzen ari den mezua ezabatu
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Funtzioa exekutatu datuak kargatzeko
+        main();
+        // Datuak berriro irakurri minutuero
+        setInterval(main, 60000); // 60000ms = 1 minuto
+    </script>
+</body>
+</html>
+
+
+
