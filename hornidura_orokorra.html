@@ -33,8 +33,8 @@
         /* Azken eguneratzea */
         #last-update {
             position: absolute;
-            bottom: 0%;
-            right: 0%;
+            bottom: 0;
+            right: 0;
             color: black;
             background: rgba(255, 255, 255, 0.8);
             padding: 0.5vw;
@@ -132,8 +132,8 @@
                 field4Element.className = 'field-value';
                 //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
                 field4Element.innerHTML = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
-                field4Element.style.left = '45%';
-                field4Element.style.top = '50%';
+                field4Element.style.left = '45vw';
+                field4Element.style.top = '50vh';
                 container.appendChild(field4Element);
             }
             if ( Albinaruntz_Q) {
@@ -141,8 +141,8 @@
                 field4Element.className = 'field-value';
                 //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
                 field4Element.innerHTML = `${Albinaruntz_Q.toFixed(2)} m<sup>3</sup>/h`;
-                field4Element.style.left = '59%';
-                field4Element.style.top = '35%';
+                field4Element.style.left = '59vw';
+                field4Element.style.top = '35vh';
                 container.appendChild(field4Element);
             }
             if ( Araka_Q_Gasteiz) {
@@ -150,8 +150,8 @@
                 field4Element.className = 'field-value';
                 //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
                 field4Element.innerHTML = `${Araka_Q_Gasteiz.toFixed(2)} m<sup>3</sup>/h`;
-                field4Element.style.left = '54%';
-                field4Element.style.top = '65%';
+                field4Element.style.left = '54vw';
+                field4Element.style.top = '65vh';
                 container.appendChild(field4Element);
             }
         }
@@ -162,7 +162,7 @@
             cursorPosition.textContent = `Kurtsorearen posizioa: (x: ${(event.clientX/19.06).toFixed(0)}, y: ${(event.clientY/9.2541).toFixed(0)})`;
         });
 
-        // Programa nagusia
+             // Programa nagusia
         async function main() {
             const lastUpdate1 = await getThingSpeakData(0);
             const lastUpdate2 = await getThingSpeakData(1);
@@ -184,6 +184,3 @@
     </script>
 </body>
 </html>
-
-
-
