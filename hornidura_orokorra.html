@@ -74,12 +74,14 @@
         // ThingSpeak kanalen konfigurazioa
         const CHANNELS = [
             { id: 1025220, apiKey: 'HONT6RJG2VNEETZJ' },
-            { id: 1025550, apiKey: 'N9VZMFEQYL1FK9NC' }
+            { id: 1025550, apiKey: 'N9VZMFEQYL1FK9NC' },
+			{ id: 2812547, apiKey: 'PVV9EMXKWN8MZUFR' }
         ];
 
         // Aldagai globalak datuak gordetzeko
         let Gardelegi_Maila, Araka_Biltegi1, Araka_Biltegi2, Araka_Biltegi3, Araka_Biltegi_zaharra, Araka_Q1_Gasteiz, Araka_Q2_Gasteiz, Araka_Q_Albinatik;
         let Militarrak_1, Militarrak_2, Ullibarri_NTU, Araka_Cl_Irtera, Gorbea_Irterako_Presioia, Araka_Cl_Tratatua, Albinaruntz_Q, Araka_Q_Gasteiz;
+		let Ullib_B1_Q, Ullib_B2_Q, Ullib_B3_Q, Ullib_B4_Q, Ullib_B5_Q, Ullib_B6_Q, Ullib_Q, Araka_Ullib_Q;
         let Arakan_bildutako_ura;
 
         // Datuak ThingSpeak API-tik eskuratzeko funtzioa
@@ -100,7 +102,7 @@
                     Araka_Biltegi_zaharra = parseField(data.feeds[0].field5);
                     Araka_Q1_Gasteiz = parseField(data.feeds[0].field6);
                     Araka_Q2_Gasteiz = parseField(data.feeds[0].field7);
-                    Araka_Q_Albinatik = parseField(data.feeds[0].field8);
+                    Araka_Q_Albinatik = parseField(data.feeds[0].field8)/3.6;
                     if ( (Araka_Biltegi1 !== null) && (Araka_Biltegi2 !== null) && (Araka_Biltegi2 !== null) ) {
                         Arakan_bildutako_ura=(Araka_Biltegi1+Araka_Biltegi2+Araka_Biltegi3)/300.0*90000.0;
                     } else {
@@ -115,6 +117,15 @@
                     Araka_Cl_Tratatua = parseField(data.feeds[0].field6);
                     Albinaruntz_Q = parseField(data.feeds[0].field7)/3.6;
                     Araka_Q_Gasteiz = parseField(data.feeds[0].field8)/3.6;
+                } else if (channel_n === 2) {
+                    Ullib_B1_Q = parseField(data.feeds[0].field1)/3.6;
+                    Ullib_B2_Q = parseField(data.feeds[0].field2)/3.6;
+                    Ullib_B3_Q = parseField(data.feeds[0].field3)/3.6;
+                    Ullib_B4_Q = parseField(data.feeds[0].field4)/3.6;
+                    Ullib_B5_Q_Q_Presioia = parseField(data.feeds[0].field5)/3.6;
+                    Ullib_B6_Q = parseField(data.feeds[0].field6)/3.6;
+                    Ullib_Q = parseField(data.feeds[0].field7)/3.6;
+                    Araka_Ullib_Q = parseField(data.feeds[0].field8)/3.6;
                 }
 
                 return new Date(data.feeds[0].created_at).toLocaleString('eu');
@@ -136,16 +147,16 @@
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
                 //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
-                field4Element.innerHTML = `Bildutako ura: ${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
-                field4Element.style.left = '45vw';
-                field4Element.style.top = '50vh';
+                field4Element.innerHTML = `${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
+                field4Element.style.left = '48vw';
+                field4Element.style.top = '48vh';
                 container.appendChild(field4Element);
             }
             if ( Albinaruntz_Q) {
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-                field4Element.textContent = `${Albinaruntz_Q.toFixed(2)} l/s`;
-                //field4Element.innerHTML = `${Albinaruntz_Q.toFixed(2)} m<sup>3</sup>/h`;
+                field4Element.textContent = `${Albinaruntz_Q.toFixed(1)} l/s`;
+                //field4Element.innerHTML = `${Albinaruntz_Q.toFixed(0)} m<sup>3</sup>/h`;
                 field4Element.style.left = '59vw';
                 field4Element.style.top = '35vh';
                 container.appendChild(field4Element);
@@ -153,8 +164,8 @@
             if ( Araka_Q_Gasteiz) {
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-                field4Element.textContent = `${Araka_Q_Gasteiz.toFixed(2)} l/s`;
-                //field4Element.innerHTML = `${Araka_Q_Gasteiz.toFixed(2)} m<sup>3</sup>/h`;
+                field4Element.textContent = `${Araka_Q_Gasteiz.toFixed(0)} l/s`;
+                //field4Element.innerHTML = `${Araka_Q_Gasteiz.toFixed(0)} m<sup>3</sup>/h`;
                 field4Element.style.left = '54vw';
                 field4Element.style.top = '65vh';
                 container.appendChild(field4Element);
@@ -165,8 +176,8 @@
 				if ( Araka_Q_Albinatik < 2.0) {
 				    Araka_Q_Albinatik = 0.0;
 				}
-                field4Element.textContent = `${Araka_Q_Albinatik.toFixed(2)} l/s`;
-                //field4Element.innerHTML = `${Araka_Q_Albinatik.toFixed(2)} m<sup>3</sup>/h`;
+                field4Element.textContent = `${Araka_Q_Albinatik.toFixed(0)} l/s`;
+                //field4Element.innerHTML = `${Araka_Q_Albinatik.toFixed(0)} m<sup>3</sup>/h`;
                 field4Element.style.left = '42vw';
                 field4Element.style.top = '38vh';
                 container.appendChild(field4Element);
@@ -177,9 +188,21 @@
 				if ( Gardelegi_Maila < 200.0) {
 				    Gardelegi_Maila = 0.0;
 				}
-                field4Element.innerHTML = `Bildutako ura: ${Gardelegi_Maila.toFixed(2)} m<sup>3</sup>`;
-                field4Element.style.left = '60vw';
-                field4Element.style.top = '83vh';
+                field4Element.innerHTML = `${Gardelegi_Maila.toFixed(0)} m<sup>3</sup>`;
+                field4Element.style.left = '65vw';
+                field4Element.style.top = '81vh';
+                container.appendChild(field4Element);
+            }
+			if ( Araka_Ullib_Q) {
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+				if ( Araka_Ullib_Q < 2.0) {
+				    Araka_Ullib_Q = 0.0;
+				}
+                field4Element.textContent = `${Araka_Ullib_Q.toFixed(0)} l/s`;
+                //field4Element.innerHTML = `${Araka_Ullib_Q.toFixed(0)} m<sup>3</sup>/h`;
+                field4Element.style.left = '42vw';
+                field4Element.style.top = '44vh';
                 container.appendChild(field4Element);
             }
         }
@@ -194,11 +217,11 @@
         async function main() {
             const lastUpdate1 = await getThingSpeakData(0);
             const lastUpdate2 = await getThingSpeakData(1);
-
+            const lastUpdate3 = await getThingSpeakData(2);
             displayData();
 
             // Azken eguneratzea eguneratu
-            const lastUpdate = lastUpdate1 || lastUpdate2 || 'Eguneraketarik ez';
+            const lastUpdate = lastUpdate1 || lastUpdate2 || lastUpdate3 || 'Eguneraketarik ez';
             document.getElementById('last-update').textContent = `Azken eguneratzea: ${lastUpdate}`;
 
             // Kargatzen ari den mezua ezabatu
