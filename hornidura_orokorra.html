@@ -25,7 +25,7 @@
         .field-value {
             position: absolute;
             color: black;
-            font-size: 1.5vh;
+            font-size: 1.9vh;
             font-weight: bold;
             text-shadow: 1px 1px 2px white;
         }
@@ -39,7 +39,7 @@
             background: rgba(255, 255, 255, 0.8);
             padding: 0.5vw;
             border-radius: 5px;
-            font-size: 1.2vh;
+            font-size: 1.8vh;
         }
 
         /* Kurtsorearen bistaratzea */
@@ -93,7 +93,7 @@
                 const parseField = (field) => (field !== null && field !== undefined && !isNaN(parseFloat(field))) ? parseFloat(field) : null;
 
                 if (channel_n === 0) {
-                    Gardelegi_Maila = parseField(data.feeds[0].field1);
+                    Gardelegi_Maila = parseField(data.feeds[0].field1)*130;
                     Araka_Biltegi1 = parseField(data.feeds[0].field2);
                     Araka_Biltegi2 = parseField(data.feeds[0].field3);
                     Araka_Biltegi3 = parseField(data.feeds[0].field4);
@@ -113,8 +113,8 @@
                     Araka_Cl_Irtera = parseField(data.feeds[0].field4);
                     Gorbea_Irterako_Presioia = parseField(data.feeds[0].field5);
                     Araka_Cl_Tratatua = parseField(data.feeds[0].field6);
-                    Albinaruntz_Q = parseField(data.feeds[0].field7);
-                    Araka_Q_Gasteiz = parseField(data.feeds[0].field8);
+                    Albinaruntz_Q = parseField(data.feeds[0].field7)/3.6;
+                    Araka_Q_Gasteiz = parseField(data.feeds[0].field8)/3.6;
                 }
 
                 return new Date(data.feeds[0].created_at).toLocaleString('eu');
@@ -127,11 +127,16 @@
         // Datuak pantailan erakusteko funtzioa
         function displayData() {
             const container = document.getElementById('background-container');
+
+            // Eliminar elementos existentes
+            const existingElements = container.querySelectorAll('.field-value');
+            existingElements.forEach(element => element.remove());
+
             if ( Arakan_bildutako_ura) {
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
                 //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
-                field4Element.innerHTML = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
+                field4Element.innerHTML = `Bildutako ura: ${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
                 field4Element.style.left = '45vw';
                 field4Element.style.top = '50vh';
                 container.appendChild(field4Element);
@@ -139,8 +144,8 @@
             if ( Albinaruntz_Q) {
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-                //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
-                field4Element.innerHTML = `${Albinaruntz_Q.toFixed(2)} m<sup>3</sup>/h`;
+                field4Element.textContent = `${Albinaruntz_Q.toFixed(2)} l/s`;
+                //field4Element.innerHTML = `${Albinaruntz_Q.toFixed(2)} m<sup>3</sup>/h`;
                 field4Element.style.left = '59vw';
                 field4Element.style.top = '35vh';
                 container.appendChild(field4Element);
@@ -148,10 +153,33 @@
             if ( Araka_Q_Gasteiz) {
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-                //field4Element.textContent = `Bildutako ur depuratua: ${Arakan_bildutako_ura.toFixed(0)} m3/h`;
-                field4Element.innerHTML = `${Araka_Q_Gasteiz.toFixed(2)} m<sup>3</sup>/h`;
+                field4Element.textContent = `${Araka_Q_Gasteiz.toFixed(2)} l/s`;
+                //field4Element.innerHTML = `${Araka_Q_Gasteiz.toFixed(2)} m<sup>3</sup>/h`;
                 field4Element.style.left = '54vw';
                 field4Element.style.top = '65vh';
+                container.appendChild(field4Element);
+            }
+			if ( Araka_Q_Albinatik) {
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+				if ( Araka_Q_Albinatik < 2.0) {
+				    Araka_Q_Albinatik = 0.0;
+				}
+                field4Element.textContent = `${Araka_Q_Albinatik.toFixed(2)} l/s`;
+                //field4Element.innerHTML = `${Araka_Q_Albinatik.toFixed(2)} m<sup>3</sup>/h`;
+                field4Element.style.left = '42vw';
+                field4Element.style.top = '38vh';
+                container.appendChild(field4Element);
+            }
+			if (Gardelegi_Maila) {
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+				if ( Gardelegi_Maila < 200.0) {
+				    Gardelegi_Maila = 0.0;
+				}
+                field4Element.innerHTML = `Bildutako ura: ${Gardelegi_Maila.toFixed(2)} m<sup>3</sup>`;
+                field4Element.style.left = '60vw';
+                field4Element.style.top = '83vh';
                 container.appendChild(field4Element);
             }
         }
@@ -159,10 +187,10 @@
         // Kurtsorearen posizioa bistaratzeko funtzioa
         document.addEventListener('click', (event) => {
             const cursorPosition = document.getElementById('cursor-position');
-            cursorPosition.textContent = `Kurtsorearen posizioa_1: (x: ${(event.clientX/19.06).toFixed(0)}, y: ${(event.clientY/9.2541).toFixed(0)})`;
+            cursorPosition.textContent = `Kurtsorearen posizioa: (x: ${(event.clientX/19.06).toFixed(0)}, y: ${(event.clientY/9.2541).toFixed(0)})`;
         });
 
-             // Programa nagusia
+       // Programa nagusia
         async function main() {
             const lastUpdate1 = await getThingSpeakData(0);
             const lastUpdate2 = await getThingSpeakData(1);
