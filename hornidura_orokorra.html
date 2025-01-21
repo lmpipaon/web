@@ -79,14 +79,15 @@
 			{ id: 2812547, apiKey: 'PVV9EMXKWN8MZUFR' },
 			{ id: 2416645, apiKey: 'R1J9LQAWI5IOIWF9' },
 			{ id: 1566013, apiKey: 'LFGOGWQPU549KV9L' },
-			{ id: 1590041, apiKey: 'TTA1GRF1YOT4O627' }
+			{ id: 1590041, apiKey: 'TTA1GRF1YOT4O627' },
+			{ id: 1574115, apiKey: 'IMOL5Y8BTUCU1F0K' }
         ];
 
         // Aldagai globalak datuak gordetzeko
         let Gardelegi_Maila, Araka_Biltegi1, Araka_Biltegi2, Araka_Biltegi3, Araka_Biltegi_zaharra, Araka_Q1_Gasteiz, Araka_Q2_Gasteiz, Araka_Q_Albinatik;
         let Militarrak_1, Militarrak_2, Ullibarri_NTU, Araka_Cl_Irtera, Gorbea_Irterako_Presioia, Araka_Cl_Tratatua, Albinaruntz_Q, Araka_Q_Gasteiz;
 		let Ullib_B1_Q, Ullib_B2_Q, Ullib_B3_Q, Ullib_B4_Q, Ullib_B5_Q, Ullib_B6_Q, Ullib_Q, Araka_Ullib_Q;
-		let Gorbea_Apadaka_Q, Gorbea_Q, Durana_Q;
+		let Gorbea_Apadaka_Q, Gorbea_Q, Durana_Q, Albina_Q;
         let Arakan_bildutako_ura;
 
         // Datuak ThingSpeak API-tik eskuratzeko funtzioa
@@ -104,9 +105,9 @@
                     Araka_Biltegi1 = parseField(data.feeds[0].field2);
                     Araka_Biltegi2 = parseField(data.feeds[0].field3);
                     Araka_Biltegi3 = parseField(data.feeds[0].field4);
-                    Araka_Biltegi_zaharra = parseField(data.feeds[0].field5);
-                    Araka_Q1_Gasteiz = parseField(data.feeds[0].field6);
-                    Araka_Q2_Gasteiz = parseField(data.feeds[0].field7);
+                    //Araka_Biltegi_zaharra = parseField(data.feeds[0].field5);
+                    //Araka_Q1_Gasteiz = parseField(data.feeds[0].field6);
+                    //Araka_Q2_Gasteiz = parseField(data.feeds[0].field7);
                     Araka_Q_Albinatik = parseField(data.feeds[0].field8)/3.6;
                     if ( (Araka_Biltegi1 !== null) && (Araka_Biltegi2 !== null) && (Araka_Biltegi2 !== null) ) {
                         Arakan_bildutako_ura=(Araka_Biltegi1+Araka_Biltegi2+Araka_Biltegi3)/300.0*90000.0;
@@ -114,22 +115,22 @@
                      Arakan_bildutako_ura=null;
                     }
                 } else if (channel_n === 1) {
-                    Militarrak_1 = parseField(data.feeds[0].field1);
-                    Militarrak_2 = parseField(data.feeds[0].field2);
-                    Ullibarri_NTU = parseField(data.feeds[0].field3);
-                    Araka_Cl_Irtera = parseField(data.feeds[0].field4);
-                    Gorbea_Irterako_Presioia = parseField(data.feeds[0].field5);
-                    Araka_Cl_Tratatua = parseField(data.feeds[0].field6);
+                    //Militarrak_1 = parseField(data.feeds[0].field1);
+                    //Militarrak_2 = parseField(data.feeds[0].field2);
+                    //Ullibarri_NTU = parseField(data.feeds[0].field3);
+                    //Araka_Cl_Irtera = parseField(data.feeds[0].field4);
+                    //Gorbea_Irterako_Presioia = parseField(data.feeds[0].field5);
+                    //Araka_Cl_Tratatua = parseField(data.feeds[0].field6);
                     Albinaruntz_Q = parseField(data.feeds[0].field7)/3.6;
                     Araka_Q_Gasteiz = parseField(data.feeds[0].field8)/3.6;
                 } else if (channel_n === 2) {
-                    Ullib_B1_Q = parseField(data.feeds[0].field1)/3.6;
-                    Ullib_B2_Q = parseField(data.feeds[0].field2)/3.6;
-                    Ullib_B3_Q = parseField(data.feeds[0].field3)/3.6;
-                    Ullib_B4_Q = parseField(data.feeds[0].field4)/3.6;
-                    Ullib_B5_Q_Q_Presioia = parseField(data.feeds[0].field5)/3.6;
-                    Ullib_B6_Q = parseField(data.feeds[0].field6)/3.6;
-                    Ullib_Q = parseField(data.feeds[0].field7)/3.6;
+                    //Ullib_B1_Q = parseField(data.feeds[0].field1)/3.6;
+                    //Ullib_B2_Q = parseField(data.feeds[0].field2)/3.6;
+                    //Ullib_B3_Q = parseField(data.feeds[0].field3)/3.6;
+                    //Ullib_B4_Q = parseField(data.feeds[0].field4)/3.6;
+                    //Ullib_B5_Q_Q_Presioia = parseField(data.feeds[0].field5)/3.6;
+                    //Ullib_B6_Q = parseField(data.feeds[0].field6)/3.6;
+                    //Ullib_Q = parseField(data.feeds[0].field7)/3.6;
                     Araka_Ullib_Q = parseField(data.feeds[0].field8)/3.6;
                 } else if (channel_n === 3) {
                     Gorbea_Apadaka_Q = parseField(data.feeds[0].field1)/3.6;
@@ -137,9 +138,8 @@
                     Gorbea_Q = parseField(data.feeds[0].field7)/3.6;
 				} else if (channel_n === 5) {
                     Durana_Q = parseField(data.feeds[0].field1)/3.6;
-					if ( Durana_Q == null ) {
-					    Durana_Q = 0.0;
-					}
+				} else if (channel_n === 6) {
+                    Albina_Q = parseField(data.feeds[0].field3)/3.6;
 				}
                 return new Date(data.feeds[0].created_at).toLocaleString('eu');
             } catch (error) {
@@ -156,7 +156,7 @@
             const existingElements = container.querySelectorAll('.field-value');
             existingElements.forEach(element => element.remove());
 
-            if ( Arakan_bildutako_ura) {
+            if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
                 field4Element.innerHTML = `${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
@@ -164,7 +164,7 @@
                 field4Element.style.top = '45vh';
                 container.appendChild(field4Element);
             }
-            if ( Albinaruntz_Q) {
+            if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
                 field4Element.textContent = `${Albinaruntz_Q.toFixed(1)} l/s`;
@@ -172,7 +172,7 @@
                 field4Element.style.top = '35vh';
                 container.appendChild(field4Element);
             }
-            if ( Araka_Q_Gasteiz) {
+            if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
                 field4Element.textContent = `${Araka_Q_Gasteiz.toFixed(0)} l/s`;
@@ -180,7 +180,7 @@
                 field4Element.style.top = '65vh';
                 container.appendChild(field4Element);
             }
-			if ( Araka_Q_Albinatik) {
+			if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
 				if ( Araka_Q_Albinatik < 10.0) {
@@ -191,7 +191,7 @@
                 field4Element.style.top = '38.5vh';
                 container.appendChild(field4Element);
             }
-			if (Gardelegi_Maila) {
+			if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
 				if ( Gardelegi_Maila < 200.0) {
@@ -202,7 +202,7 @@
                 field4Element.style.top = '75vh';
                 container.appendChild(field4Element);
             }
-			if ( Araka_Ullib_Q) {
+			if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
 				if ( Araka_Ullib_Q < 30.0) {
@@ -213,7 +213,7 @@
                 field4Element.style.top = '44vh';
                 container.appendChild(field4Element);
             }
-			if ( Gorbea_Apadaka_Q) {
+			if ( true ){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
 				if ( Gorbea_Apadaka_Q < 2.0) {
@@ -224,7 +224,7 @@
                 field4Element.style.top = '70.5vh';
                 container.appendChild(field4Element);
             }
-			if ( Gorbea_Q) {
+			if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
 				if ( Gorbea_Q < 2.0) {
@@ -235,15 +235,26 @@
                 field4Element.style.top = '70.5vh';
                 container.appendChild(field4Element);
             }
-			if ( Durana_Q ) {
+			if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
 				if ( Durana_Q < 2.0) {
 				    Durana_Q = 0.0;
 				}
                 field4Element.textContent = `${Durana_Q.toFixed(1)} l/s`;
-                field4Element.style.left = '33vw';
-                field4Element.style.top = '41vh';
+                field4Element.style.left = '32vw';
+                field4Element.style.top = '40vh';
+                container.appendChild(field4Element);
+            }
+				if (true){
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+				if ( Albina_Q < 2.0) {
+				    Albina_Q = 0.0;
+				}
+                field4Element.textContent = `${Albina_Q.toFixed(1)} l/s`;
+                field4Element.style.left = '24vw';
+                field4Element.style.top = '25vh';
                 container.appendChild(field4Element);
             }
         }
@@ -262,10 +273,11 @@
 			const lastUpdate4 = await getThingSpeakData(3);
 			const lastUpdate5 = await getThingSpeakData(4);
 			const lastUpdate6 = await getThingSpeakData(5);
+			const lastUpdate7 = await getThingSpeakData(6);
             displayData();
 
             // Azken eguneratzea eguneratu
-            const lastUpdate = lastUpdate1 || lastUpdate2 || lastUpdate3 || lastUpdate4 || lastUpdate5 ||  lastUpdat6 || 'Eguneraketarik ez';
+            const lastUpdate = lastUpdate1 || lastUpdate2 || lastUpdate3 || lastUpdate4 || lastUpdate5 ||  lastUpdat6 || lastUpdat7 || 'Eguneraketarik ez';
             document.getElementById('last-update').textContent = `Azken eguneratzea: ${lastUpdate}`;
 
             // Kargatzen ari den mezua ezabatu
