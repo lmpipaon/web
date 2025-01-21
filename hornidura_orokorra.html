@@ -40,11 +40,11 @@
             background: rgba(255, 255, 255, 0.8);
             padding: 0.5vw;
             border-radius: 5px;
-            font-size: 1.8vh;
+            font-size: 2.0vh;
         }
 
         /* Kurtsorearen bistaratzea */
-        #cursor-position {
+       /* #cursor-position {
             position: absolute;
             top: 5%;
             left: 5%;
@@ -52,8 +52,8 @@
             background: rgba(255, 255, 255, 0.8);
             padding: 0.5vw;
             border-radius: 5px;
-            font-size: 1.2vh;
-        }
+            font-size: 1.2vh; 
+        }*/
     </style>
 </head>
 <body>
@@ -260,10 +260,10 @@
         }
 
         // Kurtsorearen posizioa bistaratzeko funtzioa
-        document.addEventListener('click', (event) => {
+  /*      document.addEventListener('click', (event) => {
             const cursorPosition = document.getElementById('cursor-position');
             cursorPosition.textContent = `Kurtsorearen posizioa: (x: ${(event.clientX/13.55).toFixed(2)}, y: ${(event.clientY/6.85).toFixed(2)})`;
-        });
+        }); */
 
        // Programa nagusia
         async function main() {
