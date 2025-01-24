@@ -252,7 +252,7 @@
 				if ( Albina_Q < 2.0) {
 				    Albina_Q = 0.0;
 				}
-                field4Element.textContent = `${Albina_Q.toFixed(0)} l/s`;
+                field4Element.textContent = `${(Albina_Q*1.018).toFixed(0)} l/s`;
                 field4Element.style.left = '24vw';
                 field4Element.style.top = '25vh';
                 container.appendChild(field4Element);
