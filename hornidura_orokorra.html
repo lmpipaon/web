@@ -130,7 +130,7 @@
                     //Ullib_B4_Q = parseField(data.feeds[0].field4)/3.6;
                     //Ullib_B5_Q_Q_Presioia = parseField(data.feeds[0].field5)/3.6;
                     //Ullib_B6_Q = parseField(data.feeds[0].field6)/3.6;
-                    //Ullib_Q = parseField(data.feeds[0].field7)/3.6;
+                    Ullib_Q = parseField(data.feeds[0].field7)/3.6;
                     Araka_Ullib_Q = parseField(data.feeds[0].field8)/3.6;
                 } else if (channel_n === 3) {
                     Gorbea_Apadaka_Q = parseField(data.feeds[0].field1)/3.6;
@@ -180,81 +180,92 @@
                 field4Element.style.top = '65vh';
                 container.appendChild(field4Element);
             }
-			if (true){
+	    if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-				if ( Araka_Q_Albinatik < 10.0) {
-				    Araka_Q_Albinatik = 0.0;
-				}
+		if ( Araka_Q_Albinatik < 10.0) {
+			Araka_Q_Albinatik = 0.0;
+		}
                 field4Element.textContent = `${Araka_Q_Albinatik.toFixed(0)} l/s`;
                 field4Element.style.left = '37.79vw';
                 field4Element.style.top = '38.5vh';
                 container.appendChild(field4Element);
             }
-			if (true){
+	    if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-				if ( Gardelegi_Maila < 200.0) {
-				    Gardelegi_Maila = 0.0;
-				}
+		if ( Gardelegi_Maila < 200.0) {
+		    Gardelegi_Maila = 0.0;
+		}
                 field4Element.innerHTML = `${Gardelegi_Maila.toFixed(0)} m<sup>3</sup>`;
                 field4Element.style.left = '75vw';
                 field4Element.style.top = '75vh';
                 container.appendChild(field4Element);
             }
-			if (true){
+	    if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-				if ( Araka_Ullib_Q < 30.0) {
-				    Araka_Ullib_Q = 0.0;
-				}
+		if ( Araka_Ullib_Q < 30.0) {
+		     Araka_Ullib_Q = 0.0;
+		}
                 field4Element.textContent = `${Araka_Ullib_Q.toFixed(0)} l/s`;
                 field4Element.style.left = '37.79vw';
                 field4Element.style.top = '44vh';
                 container.appendChild(field4Element);
             }
-			if ( true ){
+	    if ( true ){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-				if ( Gorbea_Apadaka_Q < 2.0) {
-				    Gorbea_Apadaka_Q = 0.0;
-				}
+		if ( Gorbea_Apadaka_Q < 2.0) {
+		     Gorbea_Apadaka_Q = 0.0;
+		}
                 field4Element.textContent = `${Gorbea_Apadaka_Q.toFixed(1)} l/s`;
                 field4Element.style.left = '56vw';
                 field4Element.style.top = '70.5vh';
                 container.appendChild(field4Element);
             }
-			if (true){
+	    if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-				if ( Gorbea_Q < 2.0) {
-				    Gorbea_Q = 0.0;
-				}
+		if ( Gorbea_Q < 2.0) {
+		    Gorbea_Q = 0.0;
+		}
                 field4Element.textContent = `${Gorbea_Q.toFixed(1)} l/s`;
                 field4Element.style.left = '30vw';
                 field4Element.style.top = '70.5vh';
                 container.appendChild(field4Element);
             }
-			if (true){
+	    if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-				if ( Durana_Q < 2.0) {
-				    Durana_Q = 0.0;
-				}
+		if ( Durana_Q < 2.0) {
+			Durana_Q = 0.0;
+		}
                 field4Element.textContent = `${Durana_Q.toFixed(1)} l/s`;
                 field4Element.style.left = '32vw';
                 field4Element.style.top = '40vh';
                 container.appendChild(field4Element);
             }
-				if (true){
+	    if (true){
                 const field4Element = document.createElement('div');
                 field4Element.className = 'field-value';
-				if ( Albina_Q < 2.0) {
-				    Albina_Q = 0.0;
-				}
+		if ( Albina_Q < 2.0) {
+		    Albina_Q = 0.0;
+		}
                 field4Element.textContent = `${(Albina_Q*1.018).toFixed(0)} l/s`;
                 field4Element.style.left = '24vw';
                 field4Element.style.top = '25vh';
+                container.appendChild(field4Element);
+            }
+	   if (!(Ullib_Q<0.0)){
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+		if ( Ullib_Q < 2.0) {
+		    Ullib_Q = 0.0;
+		}
+                field4Element.textContent = `${(Ullib_Q).toFixed(0)} l/s`;
+                field4Element.style.left = '24vw';
+                field4Element.style.top = '35vh';
                 container.appendChild(field4Element);
             }
         }
