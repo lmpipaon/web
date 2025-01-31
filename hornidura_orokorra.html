@@ -135,13 +135,15 @@
                     Araka_Ullib_Q = parseField(data.feeds[0].field8)/3.6;
                 } else if (channel_n === 3) {
                     Gorbea_Apadaka_Q = parseField(data.feeds[0].field1)/3.6;
-				} else if (channel_n === 4) {
+		} else if (channel_n === 4) {
                     Gorbea_Q = parseField(data.feeds[0].field7)/3.6;
-				} else if (channel_n === 5) {
+		} else if (channel_n === 5) {
                     Durana_Q = parseField(data.feeds[0].field1)/3.6;
-				} else if (channel_n === 6) {
+		} else if (channel_n === 6) {
                     Albina_Q = parseField(data.feeds[0].field3)/3.6;
-				}
+		}  else if (channel_n === 7) {
+                    Ullibarri_ehunekoa = parseField(data.feeds[0].field2);
+		}   
                 return new Date(data.feeds[0].created_at).toLocaleString('eu');
             } catch (error) {
                 console.error(`Errorea ThingSpeak kanalaren (${channel.id}) datuak eskuratzean:`, error);
@@ -269,6 +271,18 @@
                 field4Element.style.top = '53vh';
                 container.appendChild(field4Element);
             }
+	    if (Ullib_Q>=0.0){
+                const field4Element = document.createElement('div');
+                field4Element.className = 'field-value';
+		if ( Ullib_Q < 2.0) {
+		    Ullib_Q = 0.0;
+		}
+                field4Element.textContent = `${(Ullib_Q).toFixed(0)} l/s`;
+                field4Element.style.left = '25vw';
+                field4Element.style.top = '53vh';
+                container.appendChild(field4Element);
+            }
+
         }
 
         // Kurtsorearen posizioa bistaratzeko funtzioa
@@ -288,8 +302,6 @@
 	    const lastUpdate5 = await getThingSpeakData(4);
 	    const lastUpdate6 = await getThingSpeakData(5);
 	    const lastUpdate7 = await getThingSpeakData(6);
-	    const lastUpdate8 = await getThingSpeakData(7);
-
 	    let lastUpdate8 = null;
 	    if (loopCount === 0 || loopCount % 20 === 0) {
 		    lastUpdate8 = await getThingSpeakData(7);
