@@ -143,6 +143,7 @@
                     Albina_Q = parseField(data.feeds[0].field3)/3.6;
 		}  else if (channel_n === 7) {
                     Ullibarri_ehunekoa = parseField(data.feeds[0].field2);
+		    Ullibarri_ehunekoa = 55.77;
 		}   
                 return new Date(data.feeds[0].created_at).toLocaleString('eu');
             } catch (error) {
