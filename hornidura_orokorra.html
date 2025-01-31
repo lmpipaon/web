@@ -277,6 +277,8 @@
             cursorPosition.textContent = `Kurtsorearen posizioa: (x: ${(event.clientX/13.55).toFixed(2)}, y: ${(event.clientY/6.85).toFixed(2)})`;
         }); */
 
+	    
+        let loopCount = 0; // Variable global para contar las ejecuciones
        // Programa nagusia
         async function main() {
             const lastUpdate1 = await getThingSpeakData(0);
