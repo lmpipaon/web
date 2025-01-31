@@ -88,7 +88,7 @@
         let Gardelegi_Maila, Araka_Biltegi1, Araka_Biltegi2, Araka_Biltegi3, Araka_Biltegi_zaharra, Araka_Q1_Gasteiz, Araka_Q2_Gasteiz, Araka_Q_Albinatik;
         let Militarrak_1, Militarrak_2, Ullibarri_NTU, Araka_Cl_Irtera, Gorbea_Irterako_Presioia, Araka_Cl_Tratatua, Albinaruntz_Q, Araka_Q_Gasteiz;
 		let Ullib_B1_Q, Ullib_B2_Q, Ullib_B3_Q, Ullib_B4_Q, Ullib_B5_Q, Ullib_B6_Q, Ullib_Q, Araka_Ullib_Q;
-		let Gorbea_Apadaka_Q, Gorbea_Q, Durana_Q, Albina_Q;
+		let Gorbea_Apadaka_Q, Gorbea_Q, Durana_Q, Albina_Q, Ullibarri_ehunekoa;
         let Arakan_bildutako_ura;
 
         // Datuak ThingSpeak API-tik eskuratzeko funtzioa
@@ -282,14 +282,15 @@
             const lastUpdate1 = await getThingSpeakData(0);
             const lastUpdate2 = await getThingSpeakData(1);
             const lastUpdate3 = await getThingSpeakData(2);
-			const lastUpdate4 = await getThingSpeakData(3);
-			const lastUpdate5 = await getThingSpeakData(4);
-			const lastUpdate6 = await getThingSpeakData(5);
-			const lastUpdate7 = await getThingSpeakData(6);
+	    const lastUpdate4 = await getThingSpeakData(3);
+	    const lastUpdate5 = await getThingSpeakData(4);
+	    const lastUpdate6 = await getThingSpeakData(5);
+	    const lastUpdate7 = await getThingSpeakData(6);
+	    const lastUpdate8 = await getThingSpeakData(7);
             displayData();
 
-            // Azken eguneratzea eguneratu
-            const lastUpdate = lastUpdate1 || lastUpdate2 || lastUpdate3 || lastUpdate4 || lastUpdate5 ||  lastUpdat6 || lastUpdat7 || 'Eguneraketarik ez';
+            // Azken eguneratzea 
+            const lastUpdate = lastUpdate1 || lastUpdate2 || lastUpdate3 || lastUpdate4 || lastUpdate5 ||  lastUpdat6 || lastUpdat7 || lastUpdat|8 | 'Eguneraketarik ez';
             document.getElementById('last-update').textContent = `Azken eguneratzea: ${lastUpdate}`;
 
             // Kargatzen ari den mezua ezabatu
