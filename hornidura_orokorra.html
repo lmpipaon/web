@@ -289,6 +289,12 @@
 	    const lastUpdate6 = await getThingSpeakData(5);
 	    const lastUpdate7 = await getThingSpeakData(6);
 	    const lastUpdate8 = await getThingSpeakData(7);
+
+	    let lastUpdate8 = null;
+	    if (loopCount === 0 || loopCount % 20 === 0) {
+		    lastUpdate8 = await getThingSpeakData(7);
+	     }
+		
             displayData();
 
             // Azken eguneratzea 
