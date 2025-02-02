@@ -59,60 +59,66 @@
         }
 
         // Función para dibujar las gráficas con Plotly
-        async function dibujarGraficas() {
-            try {
-                const feeds = await obtenerDatos();
-                const fechas = feeds.map(feed => feed.created_at);
+       async function dibujarGraficas() {
+    try {
+        const feeds = await obtenerDatos();
 
-                // Datos para field2, field3 y field4
-                const valoresField2 = feeds.map(feed => parseFloat(feed.field2));
-                const valoresField3 = feeds.map(feed => parseFloat(feed.field3));
-                const valoresField4 = feeds.map(feed => parseFloat(feed.field4));
+        // Convertir fechas de UTC a la hora local
+        const fechas = feeds.map(feed => {
+            const fechaUTC = new Date(feed.created_at);
+            return fechaUTC.toLocaleString('es-ES', { timeZone: 'Europe/Madrid' }); // Ajusta la zona horaria si es necesario
+        });
 
-                // Crear trazos para cada campo
-                const trazoField2 = {
-                    x: fechas,
-                    y: valoresField2,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: '% BILTEGI 1',
-                    line: {color: 'blue'}
-                };
+        // Datos para field2, field3 y field4
+        const valoresField2 = feeds.map(feed => parseFloat(feed.field2));
+        const valoresField3 = feeds.map(feed => parseFloat(feed.field3));
+        const valoresField4 = feeds.map(feed => parseFloat(feed.field4));
 
-                const trazoField3 = {
-                    x: fechas,
-                    y: valoresField3,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: '% BILTEGI 2',
-                    line: {color: 'green'}
-                };
+        // Crear trazos para cada campo
+        const trazoField2 = {
+            x: fechas,
+            y: valoresField2,
+            type: 'scatter',
+            mode: 'lines',
+            name: '% BILTEGI 1',
+            line: { color: 'blue' }
+        };
 
-                const trazoField4 = {
-                    x: fechas,
-                    y: valoresField4,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: '% BILTEGI 3',
-                    line: {color: 'red'}
-                };
+        const trazoField3 = {
+            x: fechas,
+            y: valoresField3,
+            type: 'scatter',
+            mode: 'lines',
+            name: '% BILTEGI 2',
+            line: { color: 'green' }
+        };
 
-                // Layout de la gráfica
-                const layout = {
-                    title: '',
-                    xaxis: {title: 'Fecha'},
-                    yaxis: {title: 'Valor'}
-                };
+        const trazoField4 = {
+            x: fechas,
+            y: valoresField4,
+            type: 'scatter',
+            mode: 'lines',
+            name: '% BILTEGI 3',
+            line: { color: 'red' }
+        };
 
-                // Dibujar las tres gráficas en el mismo contenedor
-                Plotly.newPlot('grafica', [trazoField2, trazoField3, trazoField4], layout);
-                
-            } catch (error) {
-                console.error('Error al dibujar las gráficas:', error);
-                loadingMessage.textContent = 'Errorea datuak kargatzean. Saiatu berriro mesedez.';
-                loadingMessage.style.display = 'block';
-            }
-        }
+        // Layout de la gráfica
+        const layout = {
+            title: '',
+            xaxis: { title: 'Fecha y Hora (Local)' },  // Se actualiza el título del eje X
+            yaxis: { title: 'Valor' }
+        };
+
+        // Dibujar las tres gráficas en el mismo contenedor
+        Plotly.newPlot('grafica', [trazoField2, trazoField3, trazoField4], layout);
+
+    } catch (error) {
+        console.error('Error al dibujar las gráficas:', error);
+        loadingMessage.textContent = 'Errorea datuak kargatzean. Saiatu berriro mesedez.';
+        loadingMessage.style.display = 'block';
+    }
+}
+
 
         // Llama a la función para dibujar las gráficas cuando la página se cargue
         window.onload = dibujarGraficas;
