@@ -40,6 +40,12 @@
         // URL de la API de ThingSpeak para obtener los datos (8000 resultados)
         const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${apiKey}&results=8000`;
 
+        // Función para convertir UTC a horario local de Madrid
+        function convertirAFechaLocalMadrid(fechaUTC) {
+            const fecha = new Date(fechaUTC);
+            return fecha.toLocaleString('es-ES', { timeZone: 'Europe/Madrid' });
+        }
+
         // Función para obtener los datos de ThingSpeak
         async function obtenerDatos() {
             try {
@@ -58,16 +64,20 @@
             }
         }
 
-        // Función para dibujar las gráficas con Plotly
-       async function dibujarGraficas() {
+async function dibujarGraficas() {
     try {
         const feeds = await obtenerDatos();
 
         // Convertir fechas de UTC a la hora local
         const fechas = feeds.map(feed => {
             const fechaUTC = new Date(feed.created_at);
-            return fechaUTC.toLocaleString('es-ES', { timeZone: 'Europe/Madrid' }); // Ajusta la zona horaria si es necesario
+            return fechaUTC.toLocaleString('es-ES', { timeZone: 'Europe/Madrid' });
         });
+
+        // Filtrar etiquetas del eje X para evitar solapamiento
+        const totalPuntos = fechas.length;
+        const salto = Math.ceil(totalPuntos / 10); // Muestra 10 etiquetas aprox.
+        const fechasReducidas = fechas.map((fecha, index) => (index % salto === 0 ? fecha : ''));
 
         // Datos para field2, field3 y field4
         const valoresField2 = feeds.map(feed => parseFloat(feed.field2));
@@ -105,11 +115,15 @@
         // Layout de la gráfica
         const layout = {
             title: '',
-            xaxis: { title: 'Fecha y Hora (Local)' },  // Se actualiza el título del eje X
+            xaxis: {
+                tickmode: 'array',
+                tickvals: fechas.filter((_, index) => index % salto === 0), // Solo muestra algunas fechas
+                tickangle: -30 // Inclina los ticks para mejorar la lectura
+            },
             yaxis: { title: 'Valor' }
         };
 
-        // Dibujar las tres gráficas en el mismo contenedor
+        // Dibujar la gráfica
         Plotly.newPlot('grafica', [trazoField2, trazoField3, trazoField4], layout);
 
     } catch (error) {
