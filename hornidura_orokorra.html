@@ -182,9 +182,11 @@
         	existingElements.forEach(element => element.remove());
 
         	if (Arakan_bildutako_ura !== null) {
-        		const field4Element = document.createElement('div');
+        		const field4Element = document.createElement('a');
         		field4Element.className = 'field-value';
         		field4Element.innerHTML = `${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
+			field4Element.href = 'biltegi_grafikoa.html';
+			field4Element.target = '_blank';
         		field4Element.style.left = '45vw';
         		field4Element.style.top = '45vh';
         		container.appendChild(field4Element);
@@ -297,8 +299,8 @@
         		const field4Element = document.createElement('a');
         		field4Element.className = 'field-value';
         		field4Element.textContent = `%${Ullibarri_ehunekoa.toFixed(1)}`;
-				field4Element.href = 'https://www.saihebro.com/tiempo-real/estacion-embalses-E027-ullivarri';
-				field4Element.target = '_blank';
+			field4Element.href = 'https://www.saihebro.com/tiempo-real/estacion-embalses-E027-ullivarri';
+			field4Element.target = '_blank';
         		field4Element.style.left = '10vw';
         		field4Element.style.top = '55vh';
         		container.appendChild(field4Element);
