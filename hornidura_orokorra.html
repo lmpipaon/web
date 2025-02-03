@@ -254,12 +254,14 @@
         		container.appendChild(field4Element);
         	}
         	if (Gorbea_Q !== null) {
-        		const field4Element = document.createElement('div');
+        		const field4Element = document.createElement('a');
         		field4Element.className = 'field-value';
         		if (Gorbea_Q < 2.0) {
         			Gorbea_Q = 0.0;
         		}
         		field4Element.textContent = `${Gorbea_Q.toFixed(1)} l/s`;
+			field4Element.href = 'gorbeia_grafikoa.html';
+			field4Element.target = '_blank';
         		field4Element.style.left = '25vw';
         		field4Element.style.top = '70.5vh';
         		container.appendChild(field4Element);
