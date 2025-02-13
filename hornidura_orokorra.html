@@ -208,12 +208,13 @@
         		container.appendChild(field4Element);
         	}
         	if (Araka_Q_Albinatik !== null) {
-        		const field4Element = document.createElement('div');
+        		const field4Element = document.createElement('a');
         		field4Element.className = 'field-value';
         		if (Araka_Q_Albinatik < 10.0) {
         			Araka_Q_Albinatik = 0.0;
         		}
         		field4Element.textContent = `${Araka_Q_Albinatik.toFixed(0)} l/s`;
+		        field4Element.href = 'grafica_g_albina.html';
         		field4Element.style.left = '37.79vw';
         		field4Element.style.top = '38.5vh';
         		container.appendChild(field4Element);
@@ -278,12 +279,13 @@
         		container.appendChild(field4Element);
         	}
         	if (Albina_Q !== null) {
-        		const field4Element = document.createElement('div');
+        		const field4Element = document.createElement('a');
         		field4Element.className = 'field-value';
         		if (Albina_Q < 2.0) {
         			Albina_Q = 0.0;
         		}
         		field4Element.textContent = `${(Albina_Q * 1.018).toFixed(0)} l/s`;
+			field4Element.href = 'grafica_g_albina.html';
         		field4Element.style.left = '24vw';
         		field4Element.style.top = '25vh';
         		container.appendChild(field4Element);
