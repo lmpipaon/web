@@ -311,6 +311,16 @@
         		field4Element.style.top = '55vh';
         		container.appendChild(field4Element);
         	}
+		if (Ullibarri_ehunekoa !== null) {
+        		const field4Element = document.createElement('a');
+        		field4Element.className = 'field-value';
+        		field4Element.textContent = `%${Ullibarri_ehunekoa.toFixed(1)}`;
+			field4Element.href = 'albina_maila_grafikoa.html';
+			field4Element.target = '_blank';
+        		field4Element.style.left = '10vw';
+        		field4Element.style.top = '75vh';
+        		container.appendChild(field4Element);
+        	}
         }
 
         let loopCount = 0; // Variable global para contar las ejecuciones
