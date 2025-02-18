@@ -104,7 +104,7 @@
         let Militarrak_1, Militarrak_2, Ullibarri_NTU, Araka_Cl_Irtera, Gorbea_Irterako_Presioia, Araka_Cl_Tratatua, Albinaruntz_Q, Araka_Q_Gasteiz;
         let Ullib_B1_Q, Ullib_B2_Q, Ullib_B3_Q, Ullib_B4_Q, Ullib_B5_Q, Ullib_B6_Q, Ullib_Q, Araka_Ullib_Q;
         let Gorbea_Apadaka_Q, Gorbea_Q, Durana_Q, Albina_Q, Ullibarri_ehunekoa;
-        let Arakan_bildutako_ura;
+        let Arakan_bildutako_ura, Albina_Maila;
 
         // Datuak ThingSpeak API-tik eskuratzeko funtzioa
         async function getThingSpeakData(channel) {
@@ -311,14 +311,14 @@
         		field4Element.style.top = '55vh';
         		container.appendChild(field4Element);
         	}
-		if (Ullibarri_ehunekoa !== null) {
+		if (Albina_Maila !== null) {
         		const field4Element = document.createElement('a');
         		field4Element.className = 'field-value';
-        		field4Element.textContent = `%${Ullibarri_ehunekoa.toFixed(1)}`;
+        		field4Element.textContent = `${Albina_Maila.toFixed(1)} IMGM`;
 			field4Element.href = 'albina_maila_grafikoa.html';
 			field4Element.target = '_blank';
         		field4Element.style.left = '10vw';
-        		field4Element.style.top = '75vh';
+        		field4Element.style.top = '35vh';
         		container.appendChild(field4Element);
         	}
         }
@@ -386,6 +386,7 @@
         		lastUpdate
         	} = await getThingSpeakData(CHANNELS[6]));
         	Albina_Q = result.field3 / 3.6;
+		Albina_Maila = result.field2;
         	const lastUpdate7 = lastUpdate;
 
         	let lastUpdate8 = null;
