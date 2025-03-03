@@ -11,6 +11,7 @@
         let inputs = [];
         let output = null;
         let lastUpdate = null;
+		let peso_red_neuronal;
 
         async function fetchData() {
             try {
@@ -31,6 +32,8 @@
 
                     const extra1 = parseFloat(feed.field7); // PID Out
                     const extra2 = parseFloat(feed.field8); // Pulse Rate
+					
+					peso_red_neuronal = ( extra2 - extra1 ) / output;
 
                     lastUpdate = new Date(feed.created_at);
 
@@ -77,6 +80,11 @@
 
             // Draw output node
             drawNode(ctx, outputX, 150, `NN Out\n${output}`, outputX + 10, 120);
+			
+			let w_nn = ( extra2 - extra1 ) / output;
+			drawFormattedText(ctx, outputX + 55, 140, `W<sub>1<\/sub>     \n${w_nn.toFixed(2)}`);
+			drawFormattedText(ctx, outputX + 78, 210, `W<sub>2<\/sub>     \n${(1).toFixed(2)}`);
+			
 
             // Draw secondary neuron node
             drawNode(ctx, secondaryX, 150, `Pulse Rate\n${extra2}`, secondaryX, 120);
@@ -116,6 +124,28 @@
             ctx.textBaseline = "middle";
             ctx.fillText(text, x_text, y_text);
         }
+
+		
+		function drawFormattedText(ctx, x, y, text) {
+			let parts = text.split(/(<sub>.*?<\/sub>|<sup>.*?<\/sup>)/g); // Divide el texto en partes
+			let offsetX = x; // Posición inicial
+
+			parts.forEach(part => {
+				let isSub = part.startsWith("<sub>");
+				let isSup = part.startsWith("<sup>");
+				let cleanText = part.replace(/<\/?sub>|<\/?sup>/g, ""); // Elimina etiquetas
+
+				if (isSub || isSup) ctx.font = "10px Arial"; // Tamaño más pequeño para subíndices
+				else ctx.font = "12px Arial"; // Tamaño normal para texto
+
+				let offsetY = isSub ? 5 : isSup ? -8 : 0; // Ajuste en Y para subíndices o superíndices
+				ctx.fillText(cleanText, offsetX, y + offsetY); 
+
+				offsetX += ctx.measureText(cleanText).width; // Mueve la posición para el siguiente texto
+			});
+		}
+
+
 
         function drawLine(ctx, x1, y1, x2, y2) {
             ctx.beginPath();
