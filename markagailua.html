@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+    <div style='font-family: Arial; text-align: center;'>
+        <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
+        <div style='display: flex; justify-content: center; gap: 50px;'>
+            <div>
+                <h2>ETXEKOA</h2>
+                <h1 id='score1'>0</h1>
+            </div>
+            <div>
+                <h2>KANPOKOA</h2>
+                <h1 id='score2'>0</h1>
+            </div>
+        </div>
+    </div>
+
+<script>
+const mqttBroker = "ws://mqtt3.thingspeak.com:80/mqtt"; // O prueba con "ws://mqtt3.thingspeak.com:80/mqtt"  "wss://mqtt3.thingspeak.com:443/mqtt"
+const username = "Lg4ZDgIAACUDMwkyGDEEBBg";
+const password = "LpJBUeQLjku4v1H7qciXI8XS";
+const clientId = "Lg4ZDgIAACUDMwkyGDEEBBg";
+
+const channelID = "2807091";
+const topic1 = `channels/${channelID}/subscribe/fields/field2`;
+const topic2 = `channels/${channelID}/subscribe/fields/field3`;
+
+const client = mqtt.connect(mqttBroker, {
+    username: username,
+    password: password,
+    clientId: clientId,
+    keepalive: 30,  // Mantener la conexión viva por 30 segundos
+    reconnectPeriod: 5000, // Intentar reconectar cada 5 segundos
+	clean: false // Mantener la sesión
+});
+
+client.on("connect", () => {
+    console.log("✅ Conectado a MQTT");
+
+    client.subscribe([topic1, topic2], (err) => {
+        if (err) {
+            console.error("❌ Error al suscribirse:", err);
+        } else {
+            console.log("📡 Suscrito correctamente a los topics.");
+        }
+    });
+});
+
+client.on("message", (topic, message) => {
+    console.log("📩 Mensaje recibido:", topic, message.toString());
+
+    if (topic === topic1) {
+        document.getElementById("score1").innerText = message.toString();
+    } else if (topic === topic2) {
+        document.getElementById("score2").innerText = message.toString();
+    }
+});
+
+// Manejo de desconexiones y errores
+client.on("error", (err) => {
+    console.error("🚨 Error en MQTT:", err);
+});
+
+client.on("offline", () => {
+    console.warn("⚠️ Cliente MQTT está offline");
+});
+
+client.on("reconnect", () => {
+    console.warn("🔄 Intentando reconectar en 5 segundos...");
+});
+
+</script>
+</body>
+</html>
