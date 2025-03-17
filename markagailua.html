@@ -1,10 +1,16 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="eu">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
 </head>
 <body>
     <div style='font-family: Arial; text-align: center;'>
@@ -21,60 +27,34 @@
         </div>
     </div>
 
-<script>
-const mqttBroker = "wss://mqtt3.thingspeak.com:443/mqtt"; // O prueba con "ws://mqtt3.thingspeak.com:80/mqtt"  "wss://mqtt3.thingspeak.com:443/mqtt"
-const username = "Lg4ZDgIAACUDMwkyGDEEBBg";
-const password = "LpJBUeQLjku4v1H7qciXI8XS";
-const clientId = "Lg4ZDgIAACUDMwkyGDEEBBg";
+    <script>
+        // ThingSpeak API-ren URL-a eta kanalaren ID-a
+        const channelID = "2807091";
+        const apiKey = "Z5Z4920Z1VEHF7VK"; // Hemen zure API gakoa sartu
+        const apiURL = `https://api.thingspeak.com/channels/${channelID}/feeds.json?results=10&api_key=${apiKey}`;
 
-const channelID = "2807091";
-const topic1 = `channels/${channelID}/subscribe/fields/field2`;
-const topic2 = `channels/${channelID}/subscribe/fields/field3`;
-
-const client = mqtt.connect(mqttBroker, {
-    username: username,
-    password: password,
-    clientId: clientId,
-    keepalive: 30,  // Mantener la conexión viva por 30 segundos
-    reconnectPeriod: 5000, // Intentar reconectar cada 5 segundos
-	clean: false // Mantener la sesión
-});
-
-client.on("connect", () => {
-    console.log("✅ Conectado a MQTT");
-
-    client.subscribe([topic1, topic2], (err) => {
-        if (err) {
-            console.error("❌ Error al suscribirse:", err);
-        } else {
-            console.log("📡 Suscrito correctamente a los topics.");
+        function azkenBalioaBilatu(feeds, field) {
+            for (let i = feeds.length - 1; i >= 0; i--) {
+                if (feeds[i][field]) return feeds[i][field];
+            }
+            return 0; // Ez badago baliorik, 0 jartzen da
         }
-    });
-});
 
-client.on("message", (topic, message) => {
-    console.log("📩 Mensaje recibido:", topic, message.toString());
+        function eguneratuPuntuazioa() {
+            fetch(apiURL)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.feeds.length > 0) {
+                        document.getElementById("score1").innerText = azkenBalioaBilatu(data.feeds, "field2");
+                        document.getElementById("score2").innerText = azkenBalioaBilatu(data.feeds, "field3");
+                    }
+                })
+                .catch(error => console.error("❌ Errorea API deian:", error));
+        }
 
-    if (topic === topic1) {
-        document.getElementById("score1").innerText = message.toString();
-    } else if (topic === topic2) {
-        document.getElementById("score2").innerText = message.toString();
-    }
-});
-
-// Manejo de desconexiones y errores
-client.on("error", (err) => {
-    console.error("🚨 Error en MQTT:", err);
-});
-
-client.on("offline", () => {
-    console.warn("⚠️ Cliente MQTT está offline");
-});
-
-client.on("reconnect", () => {
-    console.warn("🔄 Intentando reconectar en 5 segundos...");
-});
-
-</script>
+        // Lehenengo eguneratzea eta 5 segundoro eguneratu
+        eguneratuPuntuazioa();
+        setInterval(eguneratuPuntuazioa, 5000);
+    </script>
 </body>
 </html>
