@@ -5,25 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        h2 {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+        .score {
+            font-size: 80px;
+            font-weight: bold;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 100px;
+            margin-top: 30px;
+        }
+        .team {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .button {
+            font-size: 24px;
+            padding: 15px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .button:hover {
+            opacity: 0.8;
+        }
+        .plus {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .minus {
+            background-color: #D32F2F;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <div style='font-family: Arial; text-align: center;'>
-        <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
-        <div style='display: flex; justify-content: center; gap: 50px;'>
-            <div>
-                <h2>ETXEKOA</h2>
-                <h1 id='score1'>0</h1>
-                <button onclick="aldatuPuntuazioa('field2', 1)">+1</button>
-                <button onclick="aldatuPuntuazioa('field2', -1)">-1</button>
-            </div>
-            <div>
-                <h2>KANPOKOA</h2>
-                <h1 id='score2'>0</h1>
-                <button onclick="aldatuPuntuazioa('field3', 1)">+1</button>
-                <button onclick="aldatuPuntuazioa('field3', -1)">-1</button>
-            </div>
+    <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
+    <div class="container">
+        <div class="team">
+            <h2>SAN PRUDENTZIO</h2>
+            <h1 id="score1" class="score">0</h1>
+            <button class="button plus" onclick="aldatuPuntuazioa('field2', 1)">+1</button>
+            <button class="button minus" onclick="aldatuPuntuazioa('field2', -1)">-1</button>
+        </div>
+        <div class="team">
+            <h2>BASKONIA HEGOALDE</h2>
+            <h1 id="score2" class="score">0</h1>
+            <button class="button plus" onclick="aldatuPuntuazioa('field3', 1)">+1</button>
+            <button class="button minus" onclick="aldatuPuntuazioa('field3', -1)">-1</button>
         </div>
     </div>
+    <h1>2025/03/21 19:30-ean</h1>
 
     <script>
         // MQTT konfigurazioa
@@ -32,7 +83,7 @@
         const password = "6tSeNct7wRSQj0XSnu4iwqw8"; 
         const clientId = "Lg4ZDgIAACUDMwkyGDEEBBg";
         const channelID = "2807091";
-        
+
         const topic1 = `channels/${channelID}/publish/fields/field2`;
         const topic2 = `channels/${channelID}/publish/fields/field3`;
         const subTopic1 = `channels/${channelID}/subscribe/fields/field2`;
@@ -71,7 +122,12 @@
             console.error("🚨 MQTT errorea:", err);
         });
 
+        let debounce = false;
         function aldatuPuntuazioa(field, aldaketa) {
+            if (debounce) return; // Evita spam de clics
+            debounce = true;
+            setTimeout(() => debounce = false, 500); // Retardo de 500ms
+
             let scoreElement = field === 'field2' ? document.getElementById("score1") : document.getElementById("score2");
             let puntuazioa = parseInt(scoreElement.innerText) + aldaketa;
             puntuazioa = puntuazioa < 0 ? 0 : puntuazioa; // Puntuazioa ez da negatiboa izan behar
@@ -89,3 +145,4 @@
     </script>
 </body>
 </html>
+
