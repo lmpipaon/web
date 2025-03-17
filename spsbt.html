@@ -28,13 +28,15 @@
     <script>
         // MQTT konfigurazioa
         const mqttBroker = "wss://mqtt3.thingspeak.com:443/mqtt";
-        const username = "Lg4ZDgIAACUDMwkyGDEEBBg"; // Zure ThingSpeak erabiltzailea
-        const password = "6tSeNct7wRSQj0XSnu4iwqw8"; // Zure ThingSpeak pasahitza
+        const username = "Lg4ZDgIAACUDMwkyGDEEBBg"; 
+        const password = "6tSeNct7wRSQj0XSnu4iwqw8"; 
         const clientId = "Lg4ZDgIAACUDMwkyGDEEBBg";
         const channelID = "2807091";
         
         const topic1 = `channels/${channelID}/publish/fields/field2`;
         const topic2 = `channels/${channelID}/publish/fields/field3`;
+        const subTopic1 = `channels/${channelID}/subscribe/fields/field2`;
+        const subTopic2 = `channels/${channelID}/subscribe/fields/field3`;
 
         const client = mqtt.connect(mqttBroker, {
             username: username,
@@ -47,6 +49,22 @@
 
         client.on("connect", () => {
             console.log("✅ MQTT konektatuta");
+            client.subscribe([subTopic1, subTopic2], (err) => {
+                if (err) {
+                    console.error("❌ Errorea topic-era harpidetzean:", err);
+                } else {
+                    console.log("📡 Topic-era harpidetuta.");
+                }
+            });
+        });
+
+        client.on("message", (topic, message) => {
+            console.log("📩 Mezua jasota:", topic, message.toString());
+            if (topic === subTopic1) {
+                document.getElementById("score1").innerText = message.toString();
+            } else if (topic === subTopic2) {
+                document.getElementById("score2").innerText = message.toString();
+            }
         });
 
         client.on("error", (err) => {
