@@ -4,29 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
-</head>
-<!DOCTYPE html>
-<html lang="eu">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            font-size: 40px;
+            margin-top: 20px;
+            color: #333;
+        }
+        h2 {
+            font-size: 28px;
+            color: #555;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            margin-top: 30px;
+        }
+        .team {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 300px;
+        }
+        .score {
+            font-size: 100px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        #score1 {
+            color: #4CAF50;
+        }
+        #score2 {
+            color: #D32F2F;
+        }
+        h3 {
+            font-size: 24px;
+            color: #777;
+            margin-top: 30px;
+        }
+    </style>
 </head>
 <body>
-    <div style='font-family: Arial; text-align: center;'>
-        <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
-        <div style='display: flex; justify-content: center; gap: 50px;'>
-            <div>
-                <h2>SAN PRUDENTZIO</h2>
-                <h1 id='score1'>0</h1>
-            </div>
-            <div>
-                <h2>BASKONIA HEGOALDE</h2>
-                <h1 id='score2'>0</h1>
-            </div>
+    <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
+    <div class="container">
+        <div class="team">
+            <h2>SAN PRUDENTZIO</h2>
+            <h1 id="score1" class="score">0</h1>
         </div>
-        <h3>OSTIRALEAN 19:15-ean</h3>
+        <div class="team">
+            <h2>BASKONIA HEGOALDE</h2>
+            <h1 id="score2" class="score">0</h1>
+        </div>
     </div>
+    <h3>OSTIRALEAN 19:15-ean</h3>
 
     <script>
         // ThingSpeak API-ren URL-a eta kanalaren ID-a
@@ -59,3 +97,4 @@
     </script>
 </body>
 </html>
+
