@@ -100,7 +100,7 @@
 
         client.on("connect", () => {
             console.log("✅ MQTT konektatuta");
-            client.subscribe([subTopic1, subTopic2], (err) => {
+            client.subscribe([subTopic1, subTopic2], { qos: 1, retain: true }, (err) => {
                 if (err) {
                     console.error("❌ Errorea topic-era harpidetzean:", err);
                 } else {
@@ -113,7 +113,8 @@
             console.log("📩 Mezua jasota:", topic, message.toString());
             if (topic === subTopic1) {
                 document.getElementById("score1").innerText = message.toString();
-            } else if (topic === subTopic2) {
+            }
+			if (topic === subTopic2) {
                 document.getElementById("score2").innerText = message.toString();
             }
         });
@@ -122,27 +123,20 @@
             console.error("🚨 MQTT errorea:", err);
         });
 
-        let debounce = false;
         function aldatuPuntuazioa(field, aldaketa) {
-            if (debounce) return; // Evita spam de clics
-            debounce = true;
-            setTimeout(() => debounce = false, 500); // Retardo de 500ms
-
-            let scoreElement = field === 'field2' ? document.getElementById("score1") : document.getElementById("score2");
-            let puntuazioa = parseInt(scoreElement.innerText) + aldaketa;
-            puntuazioa = puntuazioa < 0 ? 0 : puntuazioa; // Puntuazioa ez da negatiboa izan behar
-            scoreElement.innerText = puntuazioa;
-
             let topic = field === 'field2' ? topic1 : topic2;
-            client.publish(topic, puntuazioa.toString(), { qos: 0, retain: false }, (err) => {
+
+            client.publish(topic, aldaketa.toString(), { qos: 1, retain: true }, (err) => {
                 if (err) {
                     console.error("❌ Errorea bidaltzean:", err);
                 } else {
-                    console.log(`📤 ${field} eguneratua:`, puntuazioa);
+                    console.log(`📤 ${field} eguneratua:`, aldaketa);
+                    // ❌ Aquí NO actualizamos la UI, solo esperamos el mensaje MQTT
                 }
             });
         }
     </script>
 </body>
 </html>
+
 
