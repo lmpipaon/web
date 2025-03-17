@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+    <div style='font-family: Arial; text-align: center;'>
+        <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
+        <div style='display: flex; justify-content: center; gap: 50px;'>
+            <div>
+                <h2>ETXEKOA</h2>
+                <h1 id='score1'>0</h1>
+                <button onclick="aldatuPuntuazioa('field2', 1)">+1</button>
+                <button onclick="aldatuPuntuazioa('field2', -1)">-1</button>
+            </div>
+            <div>
+                <h2>KANPOKOA</h2>
+                <h1 id='score2'>0</h1>
+                <button onclick="aldatuPuntuazioa('field3', 1)">+1</button>
+                <button onclick="aldatuPuntuazioa('field3', -1)">-1</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MQTT konfigurazioa
+        const mqttBroker = "wss://mqtt3.thingspeak.com:443/mqtt";
+        const username = "Lg4ZDgIAACUDMwkyGDEEBBg"; // Zure ThingSpeak erabiltzailea
+        const password = "6tSeNct7wRSQj0XSnu4iwqw8"; // Zure ThingSpeak pasahitza
+        const clientId = "Lg4ZDgIAACUDMwkyGDEEBBg";
+        const channelID = "2807091";
+        
+        const topic1 = `channels/${channelID}/publish/fields/field2`;
+        const topic2 = `channels/${channelID}/publish/fields/field3`;
+
+        const client = mqtt.connect(mqttBroker, {
+            username: username,
+            password: password,
+            clientId: clientId,
+            keepalive: 30,
+            reconnectPeriod: 5000,
+            clean: false
+        });
+
+        client.on("connect", () => {
+            console.log("✅ MQTT konektatuta");
+        });
+
+        client.on("error", (err) => {
+            console.error("🚨 MQTT errorea:", err);
+        });
+
+        function aldatuPuntuazioa(field, aldaketa) {
+            let scoreElement = field === 'field2' ? document.getElementById("score1") : document.getElementById("score2");
+            let puntuazioa = parseInt(scoreElement.innerText) + aldaketa;
+            puntuazioa = puntuazioa < 0 ? 0 : puntuazioa; // Puntuazioa ez da negatiboa izan behar
+            scoreElement.innerText = puntuazioa;
+
+            let topic = field === 'field2' ? topic1 : topic2;
+            client.publish(topic, puntuazioa.toString(), { qos: 0, retain: false }, (err) => {
+                if (err) {
+                    console.error("❌ Errorea bidaltzean:", err);
+                } else {
+                    console.log(`📤 ${field} eguneratua:`, puntuazioa);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
