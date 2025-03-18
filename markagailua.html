@@ -4,23 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
             text-align: center;
-            background-color: #f4f4f4;
+            background: url('sanpru.jpg') no-repeat center center fixed; /* Cambiado a imagen de fondo */
+            background-size: cover;
             margin: 0;
             padding: 0;
+            color: #fff;
+        }
+        .blurred-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            display: inline-block;
         }
         h1 {
-            font-size: 40px;
+            font-size: 50px;
             margin-top: 20px;
-            color: #333;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+            color: #0011ff;
         }
         h2 {
-            font-size: 28px;
-            color: #555;
-        }
+            font-size: 30px;
+			color: #0011ff;
+	   }
         .container {
             display: flex;
             justify-content: center;
@@ -28,72 +40,80 @@
             margin-top: 30px;
         }
         .team {
-            background: white;
+            background: rgba(255, 255, 255, 0.2);
             padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            width: 300px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            width: 320px;
+            backdrop-filter: blur(30px);
         }
         .score {
-            font-size: 100px;
+            font-size: 110px;
             font-weight: bold;
             margin: 20px 0;
         }
         #score1 {
-            color: #4CAF50;
+            color: #D32F2F;
         }
         #score2 {
             color: #D32F2F;
         }
         h3 {
-            font-size: 24px;
-            color: #777;
+            font-size: 26px;
             margin-top: 30px;
-        }
+			color: #0011ff;
+	   }
     </style>
 </head>
 <body>
-    <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
+    <div class="blurred-box">
+        <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
+    </div>
     <div class="container">
         <div class="team">
-            <h2>SAN PRUDENTZIO</h2>
+            <h2>ETXEKO TALDEA</h2>
             <h1 id="score1" class="score">0</h1>
         </div>
         <div class="team">
-            <h2>BASKONIA HEGOALDE</h2>
+            <h2>KANPOKO TALDEA</h2>
             <h1 id="score2" class="score">0</h1>
         </div>
     </div>
-    <h3>OSTIRALEAN 19:15-ean</h3>
+    <div class="blurred-box">
+        <h3>OSTIRALEAN 19:15-ean</h3>
+    </div>
 
     <script>
-        // ThingSpeak API-ren URL-a eta kanalaren ID-a
-        const channelID = "2807091";
-        const apiKey = "Z5Z4920Z1VEHF7VK"; // Hemen zure API gakoa sartu
-        const apiURL = `https://api.thingspeak.com/channels/${channelID}/feeds.json?results=10&api_key=${apiKey}`;
+        const brokerUrl = "wss://02f0e52e8e1547d3853176b85444b589.s1.eu.hivemq.cloud:8884/mqtt";
+        const options = {
+            username: "Saski_marka2626",
+            password: "2626Saski_marka",
+            connectTimeout: 4000,
+            clientId: "saskibaloiClient_" + Math.random().toString(16).substr(2, 8)
+        };
 
-        function azkenBalioaBilatu(feeds, field) {
-            for (let i = feeds.length - 1; i >= 0; i--) {
-                if (feeds[i][field]) return feeds[i][field];
+        const client = mqtt.connect(brokerUrl, options);
+
+        client.on("connect", () => {
+            console.log("✅ MQTT konektatuta!");
+            client.subscribe("etxekoa");
+            client.subscribe("kanpokoa");
+        });
+
+        client.on("message", (topic, message) => {
+            console.log(`📩 Mezua jasoa - Topic: ${topic}, Mezua: ${message.toString()}`);
+            if (topic === "etxekoa") {
+                console.log("✅ Updating score1");
+                document.getElementById("score1").textContent = message.toString();
+            } else if (topic === "kanpokoa") {
+                console.log("✅ Updating score2");
+                document.getElementById("score2").textContent = message.toString();
             }
-            return 0; // Ez badago baliorik, 0 jartzen da
-        }
+        });
 
-        function eguneratuPuntuazioa() {
-            fetch(apiURL)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.feeds.length > 0) {
-                        document.getElementById("score1").innerText = azkenBalioaBilatu(data.feeds, "field2");
-                        document.getElementById("score2").innerText = azkenBalioaBilatu(data.feeds, "field3");
-                    }
-                })
-                .catch(error => console.error("❌ Errorea API deian:", error));
-        }
-
-        // Lehenengo eguneratzea eta 5 segundoro eguneratu
-        eguneratuPuntuazioa();
-        setInterval(eguneratuPuntuazioa, 5000);
+        client.on("error", (err) => {
+            console.error("❌ Errorea MQTT konexioan:", err);
+        });
     </script>
 </body>
 </html>
