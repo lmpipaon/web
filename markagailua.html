@@ -1,3 +1,6 @@
+Para hacer el fondo más transparente, puedes ajustar el valor de la opacidad en la propiedad `rgba` de los elementos con fondo difuminado. Aquí tienes el código actualizado:
+
+```html
 <!DOCTYPE html>
 <html lang="eu">
 <head>
@@ -16,7 +19,7 @@
             color: #fff;
         }
         .blurred-box {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1); /* Ajustado a más transparente */
             padding: 20px;
             border-radius: 20px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
@@ -31,8 +34,8 @@
         }
         h2 {
             font-size: 30px;
-			color: #0011ff;
-	   }
+            color: #0011ff;
+        }
         .container {
             display: flex;
             justify-content: center;
@@ -40,7 +43,7 @@
             margin-top: 30px;
         }
         .team {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1); /* Ajustado a más transparente */
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
@@ -61,8 +64,8 @@
         h3 {
             font-size: 26px;
             margin-top: 30px;
-			color: #0011ff;
-	   }
+            color: #0011ff;
+        }
     </style>
 </head>
 <body>
