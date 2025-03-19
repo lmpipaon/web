@@ -83,16 +83,16 @@
     </div>
     <div class="container">
         <div class="team">
-            <h2>ETXEKO TALDEA</h2>
+            <h2 id="talde1_h">ETXEKO TALDEA</h2>
             <h1 id="score1" class="score">0</h1>
         </div>
         <div class="team">
-            <h2>KANPOKO TALDEA</h1>
+            <h2 id="talde2_h">KANPOKO TALDEA</h1>
             <h1 id="score2" class="score">0</h1>
         </div>
     </div>
     <div class="blurred-box">
-        <h3>MARTZOAK 21, OSTIRALA 19:15-ean<br><br>SAN PRUDENCION</h3>
+	     <h3 id="text_1">GORA SAN PRUDENCIO</h3>
     </div>
 
     <script>
@@ -110,6 +110,9 @@
             console.log("✅ MQTT konektatuta!");
             client.subscribe("etxekoa");
             client.subscribe("kanpokoa");
+			client.subscribe("text_1_h");
+			client.subscribe("talde1_h");
+			client.subscribe("talde2_h");
         });
 
         client.on("message", (topic, message) => {
@@ -120,7 +123,17 @@
             } else if (topic === "kanpokoa") {
                 console.log("✅ Updating score2");
                 document.getElementById("score2").textContent = message.toString();
+            } else if (topic === "text_1_h") {
+                console.log("✅ Updating text_1");
+                document.getElementById("text_1").textContent = message.toString();
+            } else if (topic === "talde1_h") {
+                console.log("✅ Updating talde1");
+                document.getElementById("talde1_h").textContent = message.toString();
+            } else if (topic === "talde2_h") {
+                console.log("✅ Updating talde2");
+                document.getElementById("talde2_h").textContent = message.toString();
             }
+			          
         });
 
         client.on("error", (err) => {
