@@ -17,8 +17,8 @@
         }
         body::before {
             content: "";
-            background: url('sanpru (1).png') no-repeat center center fixed;
-            background-size: cover;
+            background: url('sanpru_txiki.png') repeat;
+			background-size: 150px 150px; /* Ajusta el tamaño de cada repetición */
             opacity: 0.25; /* Ajusta la opacidad aquí */
             position: absolute;
             top: 0;
@@ -110,8 +110,8 @@
 
         client.on("connect", () => {
             console.log("✅ MQTT konektatuta!");
-            client.subscribe("etxekoa");
-            client.subscribe("kanpokoa");
+            client.subscribe("etxekoa_h");
+            client.subscribe("kanpokoa_h");
             client.subscribe("text_1_h");
             client.subscribe("talde1_h");
             client.subscribe("talde2_h");
@@ -119,10 +119,10 @@
 
         client.on("message", (topic, message) => {
             console.log(`📩 Mezua jasoa - Topic: ${topic}, Mezua: ${message.toString()}`);
-            if (topic === "etxekoa") {
+            if (topic === "etxekoa_h") {
                 console.log("✅ Updating score1");
                 document.getElementById("score1").textContent = message.toString();
-            } else if (topic === "kanpokoa") {
+            } else if (topic === "kanpokoa_h") {
                 console.log("✅ Updating score2");
                 document.getElementById("score2").textContent = message.toString();
             } else if (topic === "text_1_h") {
