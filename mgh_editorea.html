@@ -140,7 +140,9 @@ input {
     <button class="button_1" onclick="publishDate()">ARGITARATU MEZUA</button>
     <button class="button_1" onclick="publishTeamNames()">ARGITARATU TALDEAK</button>
 	<button class="button_1" onclick="resetPuntuazioa('etxekoa_h', 'kanpokoa_h')">RESET</button>
-	<button id="keep-awake">MANTENDO PANTALLA PIZTUTA</button>
+    <button id="activar">🔆 Activar pantalla encendida</button>
+    <button id="desactivar">🌙 Desactivar pantalla encendida</button>
+    <p id="status">Estado: 💤 Pantalla puede apagarse</p>
 
     <script>
         // MQTT konfigurazioa
@@ -178,19 +180,48 @@ input {
         });
 		
 		
-		async function requestWakeLock() {
-		    try {
-			    wakeLock = await navigator.wakeLock.request('screen');
-                console.log('Pantalla bloqueada para mantenerse encendida');
+async function activarPantalla() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          document.getElementById('status').textContent = 'Estado: 🔒 Pantalla encendida';
 
-               // Si se libera el wake lock por cualquier motivo
-               wakeLock.addEventListener('release', () => {
-               console.log('Wake lock liberado');
-               });
-   		    } catch (err) {
-			    console.error(`${err.name}, ${err.message}`);
-            }
-		}
+          document.getElementById('activar').classList.add('activo');
+          document.getElementById('desactivar').classList.remove('inactivo');
+
+          wakeLock.addEventListener('release', () => {
+            mostrarEstadoInactivo();
+          });
+        } else {
+          alert('Wake Lock API no está soportada en este navegador.');
+        }
+      } catch (err) {
+        console.error(`${err.name}, ${err.message}`);
+      }
+    }
+
+    function desactivarPantalla() {
+      if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
+        mostrarEstadoInactivo();
+      }
+    }
+
+    function mostrarEstadoInactivo() {
+      document.getElementById('status').textContent = 'Estado: 💤 Pantalla puede apagarse';
+      document.getElementById('activar').classList.remove('activo');
+      document.getElementById('desactivar').classList.add('inactivo');
+    }
+
+    document.getElementById('activar').addEventListener('click', activarPantalla);
+    document.getElementById('desactivar').addEventListener('click', desactivarPantalla);
+
+    document.addEventListener('visibilitychange', () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        activarPantalla();
+      }
+    });
 		
 
         client.on("message", (topic, message) => {
@@ -284,5 +315,3 @@ input {
     </script>
 </body>
 </html>
-
-
