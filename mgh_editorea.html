@@ -140,6 +140,7 @@ input {
     <button class="button_1" onclick="publishDate()">ARGITARATU MEZUA</button>
     <button class="button_1" onclick="publishTeamNames()">ARGITARATU TALDEAK</button>
 	<button class="button_1" onclick="resetPuntuazioa('etxekoa_h', 'kanpokoa_h')">RESET</button>
+	<button id="keep-awake">MANTENDO PANTALLA PIZTUTA</button>
 
     <script>
         // MQTT konfigurazioa
@@ -153,6 +154,8 @@ input {
         const dateTopic = "text_1_h";
         const team1Topic = "talde1_h";
         const team2Topic = "talde2_h";
+		
+		let wakeLock = null;
 
         const client = mqtt.connect(mqttBroker, {
             username: username,
@@ -173,6 +176,22 @@ input {
                 }
             });
         });
+		
+		
+		async function requestWakeLock() {
+		    try {
+			    wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Pantalla bloqueada para mantenerse encendida');
+
+               // Si se libera el wake lock por cualquier motivo
+               wakeLock.addEventListener('release', () => {
+               console.log('Wake lock liberado');
+               });
+   		    } catch (err) {
+			    console.error(`${err.name}, ${err.message}`);
+            }
+		}
+		
 
         client.on("message", (topic, message) => {
             console.log("📩 Mezua jasota:", topic, message.toString());
@@ -265,4 +284,5 @@ input {
     </script>
 </body>
 </html>
+
 
