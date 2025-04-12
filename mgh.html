@@ -19,8 +19,8 @@
         body::before {
             content: "";
             background: url('sanpru_txiki.png') repeat;
-			background-size: 150px 150px; /* Ajusta el tamaño de cada repetición */
-            opacity: 0.25; /* Ajusta la opacidad aquí */
+            background-size: 150px 150px;
+            opacity: 0.25;
             position: absolute;
             top: 0;
             left: 0;
@@ -45,7 +45,7 @@
         h2 {
             font-size: 30px;
             color: #0011ff;
-            white-space: pre-line; /* Permite mostrar saltos de línea */
+            white-space: pre-line;
         }
         .container {
             display: flex;
@@ -66,17 +66,17 @@
             font-weight: bold;
             margin: 20px 0;
         }
-        #score1 {
-            color: #D32F2F;
-        }
-        #score2 {
+        #score1, #score2 {
             color: #D32F2F;
         }
         h3 {
             font-size: 26px;
             margin-top: 30px;
             color: #0011ff;
-            white-space: pre-line; /* Permite mostrar saltos de línea */
+            white-space: pre-line;
+        }
+        #wakeVideo {
+            display: none;
         }
     </style>
 </head>
@@ -98,101 +98,107 @@
         <h3 id="text_1">GORA SAN PRUDENCIO</h3>
         <label><input type="checkbox" id="wakeLockToggle">Mantener pantalla encendida</label>
     </div>
-	
-    <!-- Google tag (gtag.js) -->
+
+    <!-- Video invisible para fallback -->
+    <video id="wakeVideo" playsinline muted loop>
+        <source src="data:video/mp4;base64,AAAAHGZ0eXBNNA... (video tiny vacío aquí) ..." type="video/mp4">
+    </video>
+
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T88X3HYPWW"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-T88X3HYPWW');
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-T88X3HYPWW');
     </script>
-	
+
     <script>
-        const brokerUrl = "wss://02f0e52e8e1547d3853176b85444b589.s1.eu.hivemq.cloud:8884/mqtt";
-        const options = {
-            username: "Saski_marka2626",
-            password: "2626Saski_marka",
-            connectTimeout: 4000,
-            clientId: "saskibaloiClient_" + Math.random().toString(16).substr(2, 8)
-        };
+        let wakeLock = null;
+        let fallbackVideo = document.getElementById('wakeVideo');
 
-        const client = mqtt.connect(brokerUrl, options);
-
-        client.on("connect", () => {
-            console.log("✅ MQTT konektatuta!");
-            client.subscribe("etxekoa_h");
-            client.subscribe("kanpokoa_h");
-            client.subscribe("text_1_h");
-            client.subscribe("talde1_h");
-            client.subscribe("talde2_h");
-        });
-
-        client.on("message", (topic, message) => {
-            console.log(`📩 Mezua jasoa - Topic: ${topic}, Mezua: ${message.toString()}`);
-            if (topic === "etxekoa_h") {
-                console.log("✅ Updating score1");
-                document.getElementById("score1").textContent = message.toString();
-            } else if (topic === "kanpokoa_h") {
-                console.log("✅ Updating score2");
-                document.getElementById("score2").textContent = message.toString();
-            } else if (topic === "text_1_h") {
-                console.log("✅ Updating text_1");
-                document.getElementById("text_1").innerHTML = message.toString().replace(/\n/g, '<br>');
-            } else if (topic === "talde1_h") {
-                console.log("✅ Updating talde1");
-                document.getElementById("talde1_h").innerHTML = message.toString().replace(/\n/g, '<br>');
-            } else if (topic === "talde2_h") {
-                console.log("✅ Updating talde2");
-                document.getElementById("talde2_h").innerHTML = message.toString().replace(/\n/g, '<br>');
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake Lock liberado');
+                    });
+                    console.log('Wake Lock activado');
+                } else {
+                    console.log('Wake Lock no soportado, usando fallback de video');
+                    fallbackVideo.play();
+                }
+            } catch (err) {
+                console.error('Error con Wake Lock:', err.name, err.message);
+                fallbackVideo.play(); // Fallback en caso de error
             }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+                console.log('Wake Lock desactivado');
+            }
+            fallbackVideo.pause();
+            fallbackVideo.currentTime = 0;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.getElementById('wakeLockToggle');
+            toggle.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    requestWakeLock();
+                } else {
+                    releaseWakeLock();
+                }
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (wakeLock !== null && document.visibilityState === 'visible') {
+                    requestWakeLock();
+                }
+            });
+
+            // --- MQTT SETUP ---
+            const brokerUrl = "wss://02f0e52e8e1547d3853176b85444b589.s1.eu.hivemq.cloud:8884/mqtt";
+            const options = {
+                username: "Saski_marka2626",
+                password: "2626Saski_marka",
+                connectTimeout: 4000,
+                clientId: "saskibaloiClient_" + Math.random().toString(16).substr(2, 8)
+            };
+
+            const client = mqtt.connect(brokerUrl, options);
+
+            client.on("connect", () => {
+                console.log("✅ MQTT konektatuta!");
+                client.subscribe("etxekoa_h");
+                client.subscribe("kanpokoa_h");
+                client.subscribe("text_1_h");
+                client.subscribe("talde1_h");
+                client.subscribe("talde2_h");
+            });
+
+            client.on("message", (topic, message) => {
+                const msg = message.toString();
+                if (topic === "etxekoa_h") {
+                    document.getElementById("score1").textContent = msg;
+                } else if (topic === "kanpokoa_h") {
+                    document.getElementById("score2").textContent = msg;
+                } else if (topic === "text_1_h") {
+                    document.getElementById("text_1").innerHTML = msg.replace(/\n/g, "<br>");
+                } else if (topic === "talde1_h") {
+                    document.getElementById("talde1_h").innerHTML = msg.replace(/\n/g, "<br>");
+                } else if (topic === "talde2_h") {
+                    document.getElementById("talde2_h").innerHTML = msg.replace(/\n/g, "<br>");
+                }
+            });
+
+            client.on("error", (err) => {
+                console.error("❌ Errorea MQTT konexioan:", err);
+            });
         });
-
-        client.on("error", (err) => {
-            console.error("❌ Errorea MQTT konexioan:", err);
-        });
-	    
-let wakeLock = null;
-
-async function requestWakeLock() {
-  try {
-    wakeLock = await navigator.wakeLock.request('screen');
-    wakeLock.addEventListener('release', () => {
-      console.log('Wake Lock liberado');
-    });
-    console.log('Wake Lock activado');
-  } catch (err) {
-    console.error(`${err.name}, ${err.message}`);
-  }
-}
-
-function releaseWakeLock() {
-  if (wakeLock !== null) {
-    wakeLock.release();
-    wakeLock = null;
-    console.log('Wake Lock desactivado');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const toggle = document.getElementById('wakeLockToggle');
-  if (!toggle) return;
-
-  toggle.addEventListener('change', (e) => {
-    if (e.target.checked) {
-      requestWakeLock();
-    } else {
-      releaseWakeLock();
-    }
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (wakeLock !== null && document.visibilityState === 'visible') {
-      requestWakeLock();
-    }
-  });
-});
     </script>
 </body>
 </html>
