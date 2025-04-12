@@ -110,7 +110,6 @@
     </script>
 	
     <script>
-	let wakeLock = null;
         const brokerUrl = "wss://02f0e52e8e1547d3853176b85444b589.s1.eu.hivemq.cloud:8884/mqtt";
         const options = {
             username: "Saski_marka2626",
@@ -153,44 +152,47 @@
         client.on("error", (err) => {
             console.error("❌ Errorea MQTT konexioan:", err);
         });
-	      async function requestWakeLock() {
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', () => {
-        console.log('Wake Lock liberado');
-      });
-      console.log('Wake Lock activado');
-    } catch (err) {
-      console.error(`${err.name}, ${err.message}`);
-    }
-  }
+	    
+let wakeLock = null;
 
-  function releaseWakeLock() {
-    if (wakeLock !== null) {
-      wakeLock.release();
-      wakeLock = null;
-      console.log('Wake Lock desactivado');
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const toggle = document.getElementById('wakeLockToggle');
-    if (!toggle) return;
-
-    toggle.addEventListener('change', (e) => {
-      if (e.target.checked) {
-        requestWakeLock();
-      } else {
-        releaseWakeLock();
-      }
+async function requestWakeLock() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => {
+      console.log('Wake Lock liberado');
     });
+    console.log('Wake Lock activado');
+  } catch (err) {
+    console.error(`${err.name}, ${err.message}`);
+  }
+}
 
-    document.addEventListener('visibilitychange', () => {
-      if (wakeLock !== null && document.visibilityState === 'visible') {
-        requestWakeLock();
-      }
-    });
+function releaseWakeLock() {
+  if (wakeLock !== null) {
+    wakeLock.release();
+    wakeLock = null;
+    console.log('Wake Lock desactivado');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const toggle = document.getElementById('wakeLockToggle');
+  if (!toggle) return;
+
+  toggle.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
   });
+
+  document.addEventListener('visibilitychange', () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+      requestWakeLock();
+    }
+  });
+});
     </script>
 </body>
 </html>
