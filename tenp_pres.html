@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="https://rawgithub.com/highslide-software/export-csv/master/export-csv.js"></script>
+    <script type="text/javascript">
+        var dynamicChart;
+        var channelsLoaded = 0;
+        var channelKeys =[];
+        channelKeys.push({channelNumber:507700, name:'',key:'WM4M8253L53JWXYI',fieldList:[{field:1,axis:'ºC'}]},{channelNumber:507700, name:'',key:'WM4M8253L53JWXYI',fieldList:[{field:3,axis:'ºC'}]},{channelNumber:507700, name:'',key:'WM4M8253L53JWXYI',fieldList:[{field:2,axis:'mBar'}]});
+        
+        var myOffset = new Date().getTimezoneOffset();
+
+        // Function to convert date from JSON format
+        function getChartDate(d) {
+            return Date.UTC(d.substring(0,4), d.substring(5,7)-1, d.substring(8,10), d.substring(11,13), d.substring(14,16), d.substring(17,19)) - (myOffset * 60000);
+        }
+        
+        // Hide all series
+        function HideAll() {
+            dynamicChart.series.forEach(function(series) {
+                if (series.name !== 'Navigator') {
+                    series.hide();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Show loading message
+            $('#loading-message').show();
+
+            // Set series numbers
+            let seriesCounter = 0;
+            channelKeys.forEach(function(channel) {
+                channel.fieldList.forEach(function(field) {
+                    field.series = seriesCounter++;
+                });
+            });
+            
+            // Load channel data
+            channelKeys.forEach(function(channel, index) {
+                channel.loaded = false;
+                loadThingSpeakChannel(index, channel.channelNumber, channel.key, channel.fieldList);
+            });
+
+            // Load data from ThingSpeak channel
+            function loadThingSpeakChannel(channelIndex, channelNumber, key, fieldList) {
+                $.getJSON(`https://api.thingspeak.com/channels/${channelNumber}/feed.json?offset=0&key=${key}&results=8000`, function(data) {
+                    if (data === '-1') {
+                        $('#chart-container').append('This channel is not public. To embed charts, the channel must be public or a read key must be specified.');
+                        console.log('Thingspeak Data Loading Error');
+                        return;
+                    }
+                    
+                    fieldList.forEach(function(field) {
+                        field.data = [];
+                        data.feeds.forEach(function(feed) {
+                            var value = feed[`field${field.field}`];
+                            if (!isNaN(parseInt(value))) {
+                                field.data.push([getChartDate(feed.created_at), parseFloat(value)]);
+                            }
+                        });
+                        field.name = data.channel[`field${field.field}`];
+                    });
+                    
+                    channelKeys[channelIndex].fieldList = fieldList;
+                    channelKeys[channelIndex].loaded = true;
+                    channelsLoaded++;
+
+                    if (channelsLoaded === channelKeys.length) {
+                        createChart();
+                    }
+                }).fail(function() {
+                    alert('getJSON request failed!');
+                });
+            }
+
+            // Create chart when all data is loaded
+            function createChart() {
+                var chartOptions = {
+                    chart: {
+                        renderTo: 'chart-container',
+                        zoomType: 'y',
+                        height: 'calc(100vh - 50px)', // Use full height minus 50px for loading message
+                        spacingTop: 10, // Minimal space at the top
+                        spacingBottom: 60, // Space at the bottom for the legend
+                        spacingLeft: 10, // Space on the left
+                        spacingRight: 10 // Space on the right
+                    },
+                    rangeSelector: {
+                        buttons: [
+                            { count: 30, type: 'minute', text: '30M' },
+                            { count: 12, type: 'hour', text: '12H' },
+                            { count: 1, type: 'day', text: 'D' },
+                            { count: 1, type: 'week', text: 'W' },
+                            { count: 1, type: 'month', text: 'M' },
+                            { count: 1, type: 'year', text: 'Y' },
+                            { type: 'all', text: 'All' }
+                        ],
+                        inputEnabled: true,
+                        selected: 4
+                    },
+                    title: { text: '' },
+                    tooltip: {
+                        valueDecimals: 1,
+                        valueSuffix: '',
+                        xDateFormat: '%Y-%m-%d<br/>%H:%M:%S %p'
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        ordinal: false,
+                        dateTimeLabelFormats: {
+                            hour: '%l %p',
+                            minute: '%l:%M %p'
+                        },
+                        title: { text: 'Date' }
+                    },
+                    yAxis: [{
+                        title: { text: 'ºC' },
+                        id: 'ºC'
+                    },
+                    {
+                        title: { text: 'mBar' },
+                        opposite: true,
+                        id: 'mBar'
+                    }],
+                    exporting: { enabled: true, csv: { dateFormat: '%d/%m/%Y %I:%M:%S %p' } },
+                    legend: { enabled: true, layout: 'horizontal', align: 'center', verticalAlign: 'bottom' },
+                    series: []
+                };
+
+                // Add all channel data to the chart
+                channelKeys.forEach(function(channel) {
+                    channel.fieldList.forEach(function(field) {
+                        chartOptions.series.push({
+                            data: field.data,
+                            index: field.series,
+                            yAxis: field.axis,
+                            name: field.name
+                        });
+                    });
+                });
+                
+                // Draw the chart
+                dynamicChart = new Highcharts.StockChart(chartOptions);
+
+                // Hide loading message and show the chart
+                $('#loading-message').hide();
+            }
+        });
+    </script>
+    <title>ten_pre</title>
+    <style>
+        /* Make the chart container full screen, but adjust for margins */
+        #chart-container {
+            width: 100%;
+            height: 100vh; /* Full viewport height */
+            margin: 0;
+        }
+
+        /* Style the loading message */
+        #loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            color: #000;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-message">Loading data, please wait...</div>
+    <div id="chart-container"></div>
+</body>
+</html>
