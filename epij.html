@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persiana igo / jaitzi</title>
+</head>
+<body>
+    <h1>Persiana igo / jaitzi</h1>
+    <h2>Igotzeko gXXXX ( XXXX milisegundoak )<br>Gaizteko bXXXX ( XXXX milisegundoak )<br></h2>	
+    <form id="dataForm">
+        <label for="dataInput">Sartu agindua</label>
+        <input type="text" id="dataInput" name="dataInput" required>
+        <button type="submit">Bidali</button>
+    </form>
+
+    <script>
+        // Formularioa bidaltzean exekutatzen den funtzioa
+        document.getElementById('dataForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const data = document.getElementById('dataInput').value;
+            const feedKey = 'aukerakalarma'; // Reemplaza con tu feed key de Adafruit IO
+            const username = 'lmpipaon'; // Reemplaza con tu nombre de usuario de Adafruit IO
+            const aioKey = '56cb33b6fc1146de95b6e15dbf2d6290'; // Reemplaza con tu AIO key de Adafruit IO
+
+             // Datuak Adafruit IO-ra bidaltzeko eskaera
+            fetch(`https://io.adafruit.com/api/v2/${username}/feeds/${feedKey}/data`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-AIO-Key': aioKey
+                },
+                body: JSON.stringify({ value: data })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Datuak igotzeko gXXXX XXXX dira igotzen egongo diren milisegundoak: ' + JSON.stringify(data));
+            })
+            .catch(error => {
+                console.error('Errorea:', error);
+                alert('Errore bat egon da datua igotzean.');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAN PRUDENTZIO SASKIBALOI-TALDEA</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+body {
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+h1 {
+    font-size: 28px;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+h2 {
+    font-size: 24px;
+    color: #34495e;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.score {
+    font-size: 80px;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    padding: 10px;
+}
+
+.team {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    flex: 1;
+    min-width: 40%;
+    text-align: center;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.button {
+    font-size: 40px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    width: 180px;
+}
+
+.button_1 {
+    font-size: 20px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.button:hover {
+    transform: scale(1.05);
+}
+
+.plus {
+    background-color: #27ae60;
+    color: white;
+}
+
+.minus {
+    background-color: #c0392b;
+    color: white;
+}
+
+input {
+    font-size: 18px;
+    padding: 6px;
+    margin-bottom: 5px;
+    border: 2px solid #bdc3c7;
+    border-radius: 5px;
+    text-align: center;
+    width: 90%;
+    max-width: 200px;
+}
+
+
+
+
+
+    </style>
+</head>
+<body>
+    <h1>SAN PRUDENTZIO SASKIBALOI-TALDEA</h1>
+    <div class="container">
+        <div class="team">
+            <input type="text" id="team1Input" placeholder="ETXEKO TALDEA">
+            <h2 id="team1Name">SAN PRUDENTZIO</h2>
+            <h1 id="score1" class="score">0</h1>
+	        <button class="button plus" onclick="aldatuPuntuazioa('etxekoa_h', 2)">+2</button>		
+            <button class="button plus" onclick="aldatuPuntuazioa('etxekoa_h', 1)">+1</button>
+            <button class="button minus" onclick="aldatuPuntuazioa('etxekoa_h', -1)">-1</button>
+        </div>
+        <div class="team">
+            <input type="text" id="team2Input" placeholder="KANPOKO TALDEA">
+            <h2 id="team2Name">BASKONIA HEGOALDE</h2>
+            <h1 id="score2" class="score">0</h1>
+			<button class="button plus" onclick="aldatuPuntuazioa('kanpokoa_h', 2)">+2</button>
+            <button class="button plus" onclick="aldatuPuntuazioa('kanpokoa_h', 1)">+1</button>
+            <button class="button minus" onclick="aldatuPuntuazioa('kanpokoa_h', -1)">-1</button>
+        </div>
+    </div>
+    <input type="text" id="dateInput" placeholder="SARTU MEZUA">
+    <h1 id="dateDisplay">2025/03/21 19:30-ean</h1>
+    <button class="button_1" onclick="publishDate()">ARGITARATU MEZUA</button>
+    <button class="button_1" onclick="publishTeamNames()">ARGITARATU TALDEAK</button>
+	<button class="button_1" onclick="resetPuntuazioa('etxekoa_h', 'kanpokoa_h')">RESET</button>
+    <button id="activar">🔆 Activar pantalla encendida</button>
+    <button id="desactivar">🌙 Desactivar pantalla encendida</button>
+    <p id="status">Estado: 💤 Pantalla puede apagarse</p>
+
+    <script>
+        // MQTT konfigurazioa
+        const mqttBroker = "wss://02f0e52e8e1547d3853176b85444b589.s1.eu.hivemq.cloud:8884/mqtt";
+        const username = "Saski_marka2626";
+        const password = "2626Saski_marka";
+        const clientId = "saskibaloiClient_1234h"; // Client ID fijo
+
+        const topic1 = "etxekoa_h";
+        const topic2 = "kanpokoa_h";
+        const dateTopic = "text_1_h";
+        const team1Topic = "talde1_h";
+        const team2Topic = "talde2_h";
+		
+		let wakeLock = null;
+
+        const client = mqtt.connect(mqttBroker, {
+            username: username,
+            password: password,
+            clientId: clientId,
+            keepalive: 30,
+            reconnectPeriod: 5000,
+            clean: false
+        });
+
+        client.on("connect", () => {
+            console.log("✅ MQTT konektatuta");
+            client.subscribe([topic1, topic2, dateTopic, team1Topic, team2Topic], { qos: 1, retain: true }, (err) => {
+                if (err) {
+                    console.error("❌ Errorea topic-era harpidetzean:", err);
+                } else {
+                    console.log("📡 Topic-era harpidetuta.");
+                }
+            });
+        });
+		
+		
+async function activarPantalla() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          document.getElementById('status').textContent = 'Estado: 🔒 Pantalla encendida';
+
+          document.getElementById('activar').classList.add('activo');
+          document.getElementById('desactivar').classList.remove('inactivo');
+
+          wakeLock.addEventListener('release', () => {
+            mostrarEstadoInactivo();
+          });
+        } else {
+          alert('Wake Lock API no está soportada en este navegador.');
+        }
+      } catch (err) {
+        console.error(`${err.name}, ${err.message}`);
+      }
+    }
+
+    function desactivarPantalla() {
+      if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
+        mostrarEstadoInactivo();
+      }
+    }
+
+    function mostrarEstadoInactivo() {
+      document.getElementById('status').textContent = 'Estado: 💤 Pantalla puede apagarse';
+      document.getElementById('activar').classList.remove('activo');
+      document.getElementById('desactivar').classList.add('inactivo');
+    }
+
+    document.getElementById('activar').addEventListener('click', activarPantalla);
+    document.getElementById('desactivar').addEventListener('click', desactivarPantalla);
+
+    document.addEventListener('visibilitychange', () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        activarPantalla();
+      }
+    });
+		
+
+        client.on("message", (topic, message) => {
+            console.log("📩 Mezua jasota:", topic, message.toString());
+            if (topic === topic1) {
+                document.getElementById("score1").innerText = message.toString();
+            }
+            if (topic === topic2) {
+                document.getElementById("score2").innerText = message.toString();
+            }
+            if (topic === dateTopic) {
+                document.getElementById("dateDisplay").innerText = message.toString();
+            }
+            if (topic === team1Topic) {
+                document.getElementById("team1Name").innerText = message.toString();
+            }
+            if (topic === team2Topic) {
+                document.getElementById("team2Name").innerText = message.toString();
+            }
+        });
+
+        client.on("error", (err) => {
+            console.error("🚨 MQTT errorea:", err);
+        });
+
+        function aldatuPuntuazioa(topic, aldaketa) {
+            const scoreElement = topic === 'etxekoa_h' ? document.getElementById("score1") : document.getElementById("score2");
+            let currentScore = parseInt(scoreElement.innerText);
+            let newScore = currentScore + aldaketa;
+
+            // Asegurarse de que el tanteador nunca sea negativo
+            if (newScore < 0) {
+                newScore = 0;
+            }
+			
+			// Asegurarse de que el tanteador nunca sea negativo
+            if (aldaketa == 0) {
+                newScore = 0;
+            }
+
+            client.publish(topic, newScore.toString(), { qos: 1, retain: true }, (err) => {
+                if (err) {
+                    console.error("❌ Errorea bidaltzean:", err);
+                } else {
+                    console.log(`📤 ${topic} eguneratua:`, newScore);
+                    // Actualizamos la UI inmediatamente
+                    scoreElement.innerText = newScore.toString();
+                }
+            });
+        }
+		//-------------------------------------------------
+		function resetPuntuazioa( ) {
+		    aldatuPuntuazioa('kanpokoa_h', 0);
+		    aldatuPuntuazioa('etxekoa_h', 0)
+           
+        }
+		//-------------------------------------------------
+
+        function publishDate() {
+            const dateInput = document.getElementById("dateInput").value;
+            client.publish(dateTopic, dateInput, { qos: 1, retain: true }, (err) => {
+                if (err) {
+                    console.error("❌ Errorea bidaltzean:", err);
+                } else {
+                    console.log(`📤 Data eguneratua:`, dateInput);
+                    document.getElementById("dateDisplay").innerText = dateInput;
+                }
+            });
+        }
+
+        function publishTeamNames() {
+            const team1Name = document.getElementById("team1Input").value;
+            const team2Name = document.getElementById("team2Input").value;
+            client.publish(team1Topic, team1Name, { qos: 1, retain: true }, (err) => {
+                if (err) {
+                    console.error("❌ Errorea bidaltzean:", err);
+                } else {
+                    console.log(`📤 Talde 1 eguneratua:`, team1Name);
+                    document.getElementById("team1Name").innerText = team1Name;
+                }
+            });
+            client.publish(team2Topic, team2Name, { qos: 1, retain: true }, (err) => {
+                if (err) {
+                    console.error("❌ Errorea bidaltzean:", err);
+                } else {
+                    console.log(`📤 Talde 2 eguneratua:`, team2Name);
+                    document.getElementById("team2Name").innerText = team2Name;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .form-container {
+            width: 25%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .output {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        canvas {
+            width: 70%;
+            height: 500px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <form id="nn-form">
+                <div class="input-group">
+                    <label for="input1">Cl Set</label>
+                    <input type="number" id="input1" required>
+                </div>
+                <div class="input-group">
+                    <label for="input2">Pump</label>
+                    <input type="number" id="input2" required>
+                </div>
+                <div class="input-group">
+                    <label for="input3">UV%</label>
+                    <input type="number" id="input3" required>
+                </div>
+                <div class="input-group">
+                    <label for="input4">Flow</label>
+                    <input type="number" id="input4" required>
+                </div>
+                <div class="input-group">
+                    <label for="input5">Effluent Turbidity</label>
+                    <input type="number" id="input5" required>
+                </div>
+                <button type="button" onclick="calculateOutput()">Calculate</button>
+            </form>
+            <div class="output" id="output"></div>
+        </div>
+
+        <canvas id="nn-canvas" width="800" height="500"></canvas>
+    </div>
+
+    <script>
+        // Pesos y sesgos
+        const weightsHidden = [
+            [0.1966, 0.3033, -0.8078, 0.2511, -2.8554],
+            [0.6957, -0.3623, -0.6001, 0.7802, 0.0067],
+            [0.2929, -0.0892, -1.031, -0.7317, 0.1739],
+            [0.8817, -0.4371, -0.659, 0.8486, 0.0591],
+            [0.7022, -0.3707, -0.7134, 0.8516, 0.0041],
+            [0.9845, -0.5268, -0.8922, 1.1282, 0.1068]
+        ];
+
+        const biasesHidden = [-1.2502, 2.1278, -3.3773, 2.8403, 2.1492, 3.3421];
+
+        const weightsOutput = [-4.0643, 2.1707, -4.1756, 1.6074, 2.1036, 1.3254];
+        const biasOutput = 32.9877;
+
+        // Datos de normalización
+        const normalizationData = [
+            { mu: 0.6505, sigma: 0.0834 },
+            { mu: 1.4254, sigma: 0.4944 },
+            { mu: 34.4762, sigma: 6.657 },
+            { mu: 101.5509, sigma: 13.3399 },
+            { mu: 1.2667, sigma: 1.7462 }
+        ];
+
+        // Función de normalización
+        function normalize(value, mu, sigma) {
+            return (value - mu) / sigma;
+        }
+
+        // Función ReLU
+        function relu(value) {
+            return Math.max(0, value);
+        }
+
+        // Cálculo del resultado
+        function calculateOutput() {
+            const inputs = [
+                parseFloat(document.getElementById("input1").value),
+                parseFloat(document.getElementById("input2").value),
+                parseFloat(document.getElementById("input3").value),
+                parseFloat(document.getElementById("input4").value),
+                parseFloat(document.getElementById("input5").value)
+            ];
+
+            // Normalización
+            const normalizedInputs = inputs.map((value, index) =>
+                normalize(value, normalizationData[index].mu, normalizationData[index].sigma)
+            );
+
+            // Cálculo de la capa oculta
+            const hiddenLayerOutputs = weightsHidden.map((weights, neuronIndex) => {
+                const sum = weights.reduce((acc, weight, inputIndex) => 
+                    acc + weight * normalizedInputs[inputIndex], biasesHidden[neuronIndex]
+                );
+                return relu(sum);
+            });
+
+            // Cálculo de la salida
+            const output = hiddenLayerOutputs.reduce((acc, value, index) =>
+                acc + value * weightsOutput[index], biasOutput
+            );
+
+            // Mostrar el resultado
+            document.getElementById("output").innerText = `Output: ${output.toFixed(4)}`;
+
+            // Dibujar el gráfico de la red
+            drawNetwork(normalizedInputs, hiddenLayerOutputs, output);
+        }
+
+        // Función para dibujar la red neuronal
+        function drawNetwork(inputs, hiddenOutputs, output) {
+            const canvas = document.getElementById("nn-canvas");
+            const ctx = canvas.getContext("2d");
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const inputLayerX = 100;
+            const hiddenLayerX = 350;
+            const outputLayerX = 600;
+            const layerY = 250;
+
+            // Dibujar las entradas
+            const inputSpacing = 70;
+            inputs.forEach((input, i) => {
+                const y = layerY - (inputs.length / 2 - i) * inputSpacing;
+                ctx.beginPath();
+                ctx.arc(inputLayerX, y, 20, 0, 2 * Math.PI);
+                ctx.fillStyle = "#3498DB";
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = "black";
+                ctx.fillText(`x${i + 1}: ${input.toFixed(2)}`, inputLayerX - 75, y);
+            });
+
+            // Dibujar la capa oculta
+            const hiddenSpacing = 70;
+            hiddenOutputs.forEach((output, i) => {
+                const y = layerY - (hiddenOutputs.length / 2 - i) * hiddenSpacing;
+                ctx.beginPath();
+                ctx.arc(hiddenLayerX, y, 20, 0, 2 * Math.PI);
+                ctx.fillStyle = "#F39C12";
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = "black";
+                ctx.fillText(`h${i + 1}: ${output.toFixed(2)}`, hiddenLayerX + 25, y);
+            });
+
+            // Dibujar la salida
+            ctx.beginPath();
+            ctx.arc(outputLayerX, layerY, 20, 0, 2 * Math.PI);
+            ctx.fillStyle = "#28B463";
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = "black";
+            ctx.fillText(`y: ${output.toFixed(2)}`, outputLayerX + 25, layerY);
+
+            // Dibujar conexiones entre las capas
+            inputs.forEach((_, i) => {
+                hiddenOutputs.forEach((_, j) => {
+                    const yInput = layerY - (inputs.length / 2 - i) * inputSpacing;
+                    const yHidden = layerY - (hiddenOutputs.length / 2 - j) * hiddenSpacing;
+                    ctx.beginPath();
+                    ctx.moveTo(inputLayerX, yInput);
+                    ctx.lineTo(hiddenLayerX, yHidden);
+                    ctx.stroke();
+                });
+            });
+
+            hiddenOutputs.forEach((_, i) => {
+                const yHidden = layerY - (hiddenOutputs.length / 2 - i) * hiddenSpacing;
+                ctx.beginPath();
+                ctx.moveTo(hiddenLayerX, yHidden);
+                ctx.lineTo(outputLayerX, layerY);
+                ctx.stroke();
+            });
+        }
+    </script>
+</body>
+</html>

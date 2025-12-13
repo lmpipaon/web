@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gorbeia</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        #loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>GORBEA</h1>
+    <div id="loading-message">Datuak kargatzen ari dira... Mesedez itxaron</div>
+    <div id="grafica" style="width:100%;height:500px;"></div>
+
+    <script>
+        const loadingMessage = document.getElementById('loading-message');
+        const grafica = document.getElementById('grafica');
+
+        async function obtenerDatos(channelID, apiKey, field) {
+            const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${apiKey}&results=8000`;
+            try {
+                const respuesta = await fetch(url);
+                const datos = await respuesta.json();
+                return datos.feeds.map(feed => ({
+                    fecha: new Date(feed.created_at).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' }),
+                    timestamp: new Date(feed.created_at).getTime(),
+                    valor: parseFloat(feed[`field${field}`])
+                })).filter(d => !isNaN(d.valor));
+            } catch (error) {
+                console.error('Error al obtener los datos:', error);
+                return [];
+            }
+        }
+
+        function interpolarValores(timestamps, valores, nuevosTimestamps) {
+            let i = 0;
+            return nuevosTimestamps.map(t => {
+                while (i < timestamps.length - 1 && timestamps[i + 1] <= t) {
+                    i++;
+                }
+                if (i === 0 || i === timestamps.length - 1) {
+                    return valores[i];
+                }
+                const t1 = timestamps[i], t2 = timestamps[i + 1];
+                const v1 = valores[i], v2 = valores[i + 1];
+                return v1 + ((v2 - v1) * (t - t1)) / (t2 - t1);
+            });
+        }
+
+        async function sincronizarDatos() {
+            const datos1 = await obtenerDatos(1566013, 'LFGOGWQPU549KV9L', 7);
+            const datos2 = await obtenerDatos(2416645, 'R1J9LQAWI5IOIWF9', 1);
+
+            const timestampsUnidos = [...new Set([...datos1.map(d => d.timestamp), ...datos2.map(d => d.timestamp)])].sort((a, b) => a - b);
+            
+            const valores1 = interpolarValores(datos1.map(d => d.timestamp), datos1.map(d => d.valor), timestampsUnidos);
+            const valores2 = interpolarValores(datos2.map(d => d.timestamp), datos2.map(d => d.valor), timestampsUnidos);
+            
+            const fechas = timestampsUnidos.map(t => new Date(t).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' }));
+            
+            return { fechas, valores1, valores2, timestampsUnidos };
+        }
+
+        async function dibujarGraficas() {
+            try {
+                loadingMessage.style.display = 'block';
+                grafica.style.opacity = '0.3';
+
+                const { fechas, valores1, valores2 } = await sincronizarDatos();
+
+                const totalPuntos = fechas.length;
+                const salto = Math.max(1, Math.floor(totalPuntos / 8)); // Reducir etiquetas en el eje X sin eliminar todas
+                const tickvals = fechas.filter((_, index) => index % salto === 0);
+                
+                const trazo1 = {
+                    x: fechas,
+                    y: valores1,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'm<sup>3</sup>/h GORBEIA',
+                    line: { color: 'blue' }
+                };
+
+                const trazo2 = {
+                    x: fechas,
+                    y: valores2,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'm<sup>3</sup>/h APODAKA',
+                    line: { color: 'green' }
+                };
+
+                const layout = {
+                    title: '',
+                    xaxis: {
+                        tickmode: 'array',
+                        tickvals: tickvals,
+                        tickangle: -30
+                    },
+                    yaxis: { title: 'Valor' }
+                };
+
+                Plotly.newPlot('grafica', [trazo1, trazo2], layout);
+            } catch (error) {
+                console.error('Error al dibujar las gráficas:', error);
+                loadingMessage.textContent = 'Errorea datuak kargatzean. Saiatu berriro mesedez.';
+                loadingMessage.style.display = 'block';
+            } finally {
+                loadingMessage.style.display = 'none';
+                grafica.style.opacity = '1';
+            }
+        }
+
+        window.onload = dibujarGraficas;
+    </script>
+</body>
+</html>

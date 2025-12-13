@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Chlorination - Network Visualizer</title>
+    <script>
+        const channelID = "1772485";
+        const readKey = "ZS7YNNQBK8YBSIDL";
+
+        let inputs = [];
+        let output = null;
+        let lastUpdate = null;
+		let peso_red_neuronal;
+
+        async function fetchData() {
+            try {
+                const response = await fetch(`https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readKey}&results=1`);
+                const data = await response.json();
+
+                if (data.feeds && data.feeds.length > 0) {
+                    const feed = data.feeds[0];
+                    
+                    inputs = [
+                        parseFloat(feed.field1), // CL Set
+                        parseFloat(feed.field2), // Pump
+                        parseFloat(feed.field3), // UV%
+                        parseFloat(feed.field4), // Flow
+                        parseFloat(feed.field5)  // Effluent Turbidity
+                    ];
+                    output = parseFloat(feed.field6); // NN Out
+
+                    const extra1 = parseFloat(feed.field7); // PID Out
+                    const extra2 = parseFloat(feed.field8); // Pulse Rate
+					
+					peso_red_neuronal = ( extra2 - extra1 ) / output;
+
+                    lastUpdate = new Date(feed.created_at);
+
+                    drawNeuralNetwork(inputs, output, extra1, extra2);
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        function drawNeuralNetwork(inputs, output, extra1, extra2) {
+            const canvas = document.getElementById("nnCanvas");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const inputX = 150;
+            const hiddenX = 300;
+            const outputX = 450;
+            const secondaryX = 600;
+            const nodeRadius = 20;
+            const nodeGap = 50;
+
+            const labels = ["CL Set", "Pump", "UV%", "Flow", "Effluent Turbidity"];
+
+            // Display last update time
+            if (lastUpdate) {
+                ctx.font = "14px Arial";
+                ctx.textAlign = "left";
+                ctx.fillStyle = "black";
+                ctx.fillText(`Last update: ${lastUpdate.toLocaleString('en-US')}`, 10, 350);
+            }
+
+            // Draw input nodes
+            inputs.forEach((val, i) => {
+                const y = 50 + i * nodeGap;
+                drawNode(ctx, inputX, y, `${labels[i]}\n${val}`, inputX - 90, y);
+            });
+
+            // Draw hidden layer nodes
+            for (let i = 0; i < 6; i++) {
+                const y = 30 + i * nodeGap;
+                drawNode(ctx, hiddenX, y, `H${i + 1}`, hiddenX, y);
+            }
+
+            // Draw output node
+            drawNode(ctx, outputX, 150, `NN Out\n${output}`, outputX + 10, 120);
+			
+			let w_nn = ( extra2 - extra1 ) / output;
+			drawFormattedText(ctx, outputX + 55, 140, `W<sub>1<\/sub>     \n${w_nn.toFixed(2)}`);
+			drawFormattedText(ctx, outputX + 78, 210, `W<sub>2<\/sub>     \n${(1).toFixed(2)}`);
+			
+
+            // Draw secondary neuron node
+            drawNode(ctx, secondaryX, 150, `Pulse Rate\n${extra2}`, secondaryX, 120);
+
+            // Draw additional input node for Field 7
+            const field7X = outputX; // Moved to align with the NN Out
+            const field7Y = 250; // Adjusted position below NN Out
+            drawNode(ctx, field7X, field7Y, `PID Out\n${extra1}`, field7X, field7Y + 30);
+
+            // Draw connections
+            inputs.forEach((_, i) => {
+                const inputY = 50 + i * nodeGap;
+                for (let j = 0; j < 6; j++) {
+                    const hiddenY = 30 + j * nodeGap;
+                    drawLine(ctx, inputX + nodeRadius, inputY, hiddenX - nodeRadius, hiddenY);
+                }
+            });
+
+            for (let j = 0; j < 6; j++) {
+                const hiddenY = 30 + j * nodeGap;
+                drawLine(ctx, hiddenX + nodeRadius, hiddenY, outputX - nodeRadius, 150);
+            }
+
+            // Connect output to secondary neuron
+            drawLine(ctx, outputX + nodeRadius, 150, secondaryX - nodeRadius, 150);
+
+            // Connect Field 7 to secondary neuron
+            drawLine(ctx, field7X + nodeRadius, field7Y, secondaryX - nodeRadius, 150);
+        }
+
+        function drawNode(ctx, x, y, text, x_text, y_text) {
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.font = "12px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, x_text, y_text);
+        }
+
+		
+		function drawFormattedText(ctx, x, y, text) {
+			let parts = text.split(/(<sub>.*?<\/sub>|<sup>.*?<\/sup>)/g); // Divide el texto en partes
+			let offsetX = x; // Posición inicial
+
+			parts.forEach(part => {
+				let isSub = part.startsWith("<sub>");
+				let isSup = part.startsWith("<sup>");
+				let cleanText = part.replace(/<\/?sub>|<\/?sup>/g, ""); // Elimina etiquetas
+
+				if (isSub || isSup) ctx.font = "10px Arial"; // Tamaño más pequeño para subíndices
+				else ctx.font = "12px Arial"; // Tamaño normal para texto
+
+				let offsetY = isSub ? 5 : isSup ? -8 : 0; // Ajuste en Y para subíndices o superíndices
+				ctx.fillText(cleanText, offsetX, y + offsetY); 
+
+				offsetX += ctx.measureText(cleanText).width; // Mueve la posición para el siguiente texto
+			});
+		}
+
+
+
+        function drawLine(ctx, x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        setInterval(fetchData, 30000);
+        window.onload = fetchData;
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        canvas {
+            margin: 20px auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Intelligent Chlorination - Network Visualizer</h1>
+
+    <canvas id="nnCanvas" width="800" height="400"></canvas>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hornidura sistema</title>
+    <style>
+        /* Gorputzaren estiloak */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Kanpo-div-a: irudia eta posizioak erreferentzia moduan */
+        #background-container {
+           position: relative;
+           width: 100vw; /* 100% del ancho de la ventana */
+           height: 100vh; /* 100% de la altura de la ventana */
+           overflow: hidden; /* Asegúrate de que nada se salga del contenedor */
+           background: url('hornidura_orokorra.png') no-repeat center center fixed;
+           background-size: 100% 100%; /* Ajusta la imagen para cubrir todo el contenedor */
+        }
+
+        /* Datuen posizioak eta estiloak */
+        .field-value {
+            position: absolute;
+            color: black;
+            font-size: 2.5vh;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        /* Azken eguneratzea */
+        #last-update {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            color: black;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.5vw;
+            border-radius: 5px;
+            font-size: 2.0vh;
+        }
+
+        /* Kurtsorearen bistaratzea */
+       /* #cursor-position {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            color: black;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.5vw;
+            border-radius: 5px;
+            font-size: 1.2vh; 
+        }*/
+    </style>
+</head>
+<body>
+    <!-- Irudiaren eta testuen erreferentzia-div-a -->
+    <div id="background-container">
+        <!-- JavaScript kargatzen ari den mezua -->
+        <p id="loading" style="color: black; text-align: center; margin-top: 20px;">
+            Datuak kargatzen ari dira, itxaron mesedez...
+        </p>
+
+        <!-- Azken eguneratze denbora bistaratzeko leku bat -->
+        <div id="last-update"></div>
+
+        <!-- Kurtsorearen posizioa bistaratzeko leku bat -->
+    <!--     <div id="cursor-position">Kurtsorearen posizioa: (x: -, y: -)</div> -->
+    </div>
+
+    <script>
+        // ThingSpeak kanalen konfigurazioa
+        const CHANNELS = [{
+        	id: 1025220,
+        	apiKey: 'HONT6RJG2VNEETZJ'
+        }, {
+        	id: 1025550,
+        	apiKey: 'N9VZMFEQYL1FK9NC'
+        }, {
+        	id: 2812547,
+        	apiKey: 'PVV9EMXKWN8MZUFR'
+        }, {
+        	id: 2416645,
+        	apiKey: 'R1J9LQAWI5IOIWF9'
+        }, {
+        	id: 1566013,
+        	apiKey: 'LFGOGWQPU549KV9L'
+        }, {
+        	id: 1590041,
+        	apiKey: 'TTA1GRF1YOT4O627'
+        }, {
+        	id: 1574115,
+        	apiKey: 'IMOL5Y8BTUCU1F0K'
+        }, {
+        	id: 1635894,
+        	apiKey: '2BGNR91NUVCAGFQN'
+        }];
+
+        // Aldagai globalak datuak gordetzeko
+        let Gardelegi_Maila, Araka_Biltegi1, Araka_Biltegi2, Araka_Biltegi3, Araka_Biltegi_zaharra, Araka_Q1_Gasteiz, Araka_Q2_Gasteiz, Araka_Q_Albinatik;
+        let Militarrak_1, Militarrak_2, Ullibarri_NTU, Araka_Cl_Irtera, Gorbea_Irterako_Presioia, Araka_Cl_Tratatua, Albinaruntz_Q, Araka_Q_Gasteiz;
+        let Ullib_B1_Q, Ullib_B2_Q, Ullib_B3_Q, Ullib_B4_Q, Ullib_B5_Q, Ullib_B6_Q, Ullib_Q, Araka_Ullib_Q;
+        let Gorbea_Apadaka_Q, Gorbea_Q, Durana_Q, Albina_Q, Ullibarri_ehunekoa;
+        let Arakan_bildutako_ura, Albina_Maila;
+
+        // Datuak ThingSpeak API-tik eskuratzeko funtzioa
+        async function getThingSpeakData(channel) {
+        	try {
+        		const response = await fetch(`https://api.thingspeak.com/channels/${channel.id}/feeds.json?api_key=${channel.apiKey}&results=1`);
+        		const data = await response.json();
+
+        		// Convierte los valores en floats si son válidos, de lo contrario asigna `null`
+        		const parseField = (field) => (field !== null && field !== undefined && !isNaN(parseFloat(field))) ? parseFloat(field) : null;
+
+        		let result = {};
+        		result.field1 = parseField(data.feeds[0].field1);
+        		result.field2 = parseField(data.feeds[0].field2);
+        		result.field3 = parseField(data.feeds[0].field3);
+        		result.field4 = parseField(data.feeds[0].field4);
+        		result.field5 = parseField(data.feeds[0].field5);
+        		result.field6 = parseField(data.feeds[0].field6);
+        		result.field7 = parseField(data.feeds[0].field7);
+        		result.field8 = parseField(data.feeds[0].field8);
+
+        		return {
+        			result,
+        			lastUpdate: new Date(data.feeds[0].created_at).toLocaleString('eu')
+        		};
+        	} catch (error) {
+        		console.error(`Errorea ThingSpeak kanalaren (${channel.id}) datuak eskuratzean:`, error);
+        		return null;
+        	}
+        }
+
+
+        // Función para obtener un solo campo de ThingSpeak
+        async function getSingleFieldData(channel, fieldNumber, numValues) {
+        	try {
+        		const response = await fetch(`https://api.thingspeak.com/channels/${channel.id}/feeds.json?api_key=${channel.apiKey}&results=${numValues}`);
+        		const data = await response.json();
+
+        		console.log(`Datos recibidos del canal ${channel.id}:`, data); // Imprimir datos recibidos para depuración
+
+        		// Convierte los valores en floats si son válidos, de lo contrario asigna `null`
+        		const parseField = (field) => (field !== null && field !== undefined && !isNaN(parseFloat(field))) ? parseFloat(field) : null;
+
+        		// Iterar desde el último valor hacia atrás para encontrar el último valor válido
+        		for (let i = data.feeds.length - 1; i >= 0; i--) {
+        			const fieldValue = parseField(data.feeds[i][`field${fieldNumber}`]);
+        			console.log(`Valor del campo ${fieldNumber} en la posición ${i}:`, fieldValue); // Imprimir valor del campo para depuración
+        			if (fieldValue !== null) {
+        				return {
+        					value: fieldValue,
+        					lastUpdate: new Date(data.feeds[i].created_at).toLocaleString('eu')
+        				};
+        			}
+        		}
+
+        		// Si no se encuentra ningún valor válido
+        		return {
+        			value: null,
+        			lastUpdate: null
+        		};
+        	} catch (error) {
+        		console.error(`Errorea ThingSpeak kanalaren (${channel.id}) datuak eskuratzean:`, error);
+        		return {
+        			value: null,
+        			lastUpdate: null
+        		};
+        	}
+        }
+
+        // Datuak pantailan erakusteko funtzioa
+        function displayData() {
+        	const container = document.getElementById('background-container');
+
+        	// Eliminar elementos existentes
+        	const existingElements = container.querySelectorAll('.field-value');
+        	existingElements.forEach(element => element.remove());
+
+        	if (Arakan_bildutako_ura !== null) {
+        		const field4Element = document.createElement('a');
+        		field4Element.className = 'field-value';
+        		field4Element.innerHTML = `${Arakan_bildutako_ura.toFixed(0)} m<sup>3</sup>`;
+			field4Element.href = 'biltegi_grafikoa.html';
+			field4Element.target = '_blank';
+        		field4Element.style.left = '45vw';
+        		field4Element.style.top = '45vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Albinaruntz_Q !== null) {
+        		const field4Element = document.createElement('div');
+        		field4Element.className = 'field-value';
+        		field4Element.textContent = `${Albinaruntz_Q.toFixed(1)} l/s`;
+        		field4Element.style.left = '66vw';
+        		field4Element.style.top = '35vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Araka_Q_Gasteiz !== null) {
+        		const field4Element = document.createElement('div');
+        		field4Element.className = 'field-value';
+        		field4Element.textContent = `${Araka_Q_Gasteiz.toFixed(0)} l/s`;
+        		field4Element.style.left = '65vw';
+        		field4Element.style.top = '65vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Araka_Q_Albinatik !== null) {
+        		const field4Element = document.createElement('a');
+        		field4Element.className = 'field-value';
+        		if (Araka_Q_Albinatik < 10.0) {
+        			Araka_Q_Albinatik = 0.0;
+        		}
+        		field4Element.textContent = `${Araka_Q_Albinatik.toFixed(0)} l/s`;
+		        field4Element.href = 'grafica_g_albina.html';
+        		field4Element.style.left = '37.79vw';
+        		field4Element.style.top = '38.5vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Gardelegi_Maila !== null) {
+        		const field4Element = document.createElement('div');
+        		field4Element.className = 'field-value';
+        		if (Gardelegi_Maila < 200.0) {
+        			Gardelegi_Maila = 0.0;
+        		}
+        		field4Element.innerHTML = `${Gardelegi_Maila.toFixed(0)} m<sup>3</sup>`;
+        		field4Element.style.left = '75vw';
+        		field4Element.style.top = '75vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Araka_Ullib_Q !== null) {
+        		const field4Element = document.createElement('div');
+        		field4Element.className = 'field-value';
+        		if (Araka_Ullib_Q < 30.0) {
+        			Araka_Ullib_Q = 0.0;
+        		}
+        		field4Element.textContent = `${Araka_Ullib_Q.toFixed(0)} l/s`;
+        		field4Element.style.left = '37.79vw';
+        		field4Element.style.top = '44vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Gorbea_Apadaka_Q !== null) {
+        		const field4Element = document.createElement('a');
+        		field4Element.className = 'field-value';
+        		if (Gorbea_Apadaka_Q < 2.0) {
+        			Gorbea_Apadaka_Q = 0.0;
+        		}
+        		field4Element.textContent = `${Gorbea_Apadaka_Q.toFixed(1)} l/s`;
+			field4Element.href = 'gorbeia_grafikoa.html';
+			field4Element.target = '_blank';
+        		field4Element.style.left = '56vw';
+        		field4Element.style.top = '70.5vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Gorbea_Q !== null) {
+        		const field4Element = document.createElement('a');
+        		field4Element.className = 'field-value';
+        		if (Gorbea_Q < 2.0) {
+        			Gorbea_Q = 0.0;
+        		}
+        		field4Element.textContent = `${Gorbea_Q.toFixed(1)} l/s`;
+			field4Element.href = 'gorbeia_grafikoa.html';
+			field4Element.target = '_blank';
+        		field4Element.style.left = '25vw';
+        		field4Element.style.top = '70.5vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Durana_Q !== null) {
+        		const field4Element = document.createElement('div');
+        		field4Element.className = 'field-value';
+        		if (Durana_Q < 2.0) {
+        			Durana_Q = 0.0;
+        		}
+        		field4Element.textContent = `${Durana_Q.toFixed(1)} l/s`;
+        		field4Element.style.left = '31vw';
+        		field4Element.style.top = '40vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Albina_Q !== null) {
+        		const field4Element = document.createElement('a');
+        		field4Element.className = 'field-value';
+        		if (Albina_Q < 2.0) {
+        			Albina_Q = 0.0;
+        		}
+        		field4Element.textContent = `${(Albina_Q * 1.0).toFixed(0)} l/s`;
+			field4Element.href = 'grafica_g_albina.html';
+        		field4Element.style.left = '24vw';
+        		field4Element.style.top = '25vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Ullib_Q >= 0.0) {
+        		const field4Element = document.createElement('div');
+        		field4Element.className = 'field-value';
+        		if (Ullib_Q < 2.0) {
+        			Ullib_Q = 0.0;
+        		}
+        		field4Element.textContent = `${Ullib_Q.toFixed(0)} l/s`;
+        		field4Element.style.left = '25vw';
+        		field4Element.style.top = '53vh';
+        		container.appendChild(field4Element);
+        	}
+        	if (Ullibarri_ehunekoa !== null) {
+        		const field4Element = document.createElement('a');
+        		field4Element.className = 'field-value';
+        		field4Element.textContent = `%${Ullibarri_ehunekoa.toFixed(1)}`;
+			field4Element.href = 'https://www.saihebro.com/tiempo-real/estacion-embalses-E027-ullivarri';
+			field4Element.target = '_blank';
+        		field4Element.style.left = '10vw';
+        		field4Element.style.top = '55vh';
+        		container.appendChild(field4Element);
+        	}
+		if (Albina_Maila !== null) {
+        		const field4Element = document.createElement('a');
+        		field4Element.className = 'field-value';
+        		field4Element.textContent = `${Albina_Maila.toFixed(1)} IMGM`;
+			field4Element.href = 'albina_maila_grafikoa.html';
+			field4Element.target = '_blank';
+        		field4Element.style.left = '7vw';
+        		field4Element.style.top = '26vh';
+        		container.appendChild(field4Element);
+        	}
+        }
+
+        let loopCount = 0; // Variable global para contar las ejecuciones
+
+        // Programa nagusia
+        async function main() {
+        	let result, lastUpdate;
+        	({
+        		result,
+        		lastUpdate
+        	} = await getThingSpeakData(CHANNELS[0]));
+        	Gardelegi_Maila = result.field1 * 130;
+        	Araka_Biltegi1 = result.field2;
+        	Araka_Biltegi2 = result.field3;
+        	Araka_Biltegi3 = result.field4;
+        	Araka_Q_Albinatik = result.field8 / 3.6;
+        	const lastUpdate1 = lastUpdate;
+        	if (Araka_Biltegi1 !== null && Araka_Biltegi2 !== null && Araka_Biltegi3 !== null) {
+        		Arakan_bildutako_ura = (Araka_Biltegi1 + Araka_Biltegi2 + Araka_Biltegi3) / 300.0 * 90000.0;
+        	} else {
+        		Arakan_bildutako_ura = null;
+        	}
+
+        	({
+        		result,
+        		lastUpdate
+        	} = await getThingSpeakData(CHANNELS[1]));
+        	Albinaruntz_Q = result.field7 / 3.6;
+        	Araka_Q_Gasteiz = result.field8 / 3.6;
+        	const lastUpdate2 = lastUpdate;
+
+        	({
+        		result,
+        		lastUpdate
+        	} = await getThingSpeakData(CHANNELS[2]));
+        	Ullib_Q = result.field7 / 3.6;
+        	Araka_Ullib_Q = result.field8 / 3.6;
+        	const lastUpdate3 = lastUpdate;
+
+        	({
+        		result,
+        		lastUpdate
+        	} = await getThingSpeakData(CHANNELS[3]));
+        	Gorbea_Apadaka_Q = result.field1 / 3.6;
+        	const lastUpdate4 = lastUpdate;
+
+        	({
+        		result,
+        		lastUpdate
+        	} = await getThingSpeakData(CHANNELS[4]));
+        	Gorbea_Q = result.field7 / 3.6;
+        	const lastUpdate5 = lastUpdate;
+
+        	({
+        		result,
+        		lastUpdate
+        	} = await getThingSpeakData(CHANNELS[5]));
+        	Durana_Q = result.field1 / 3.6;
+        	const lastUpdate6 = lastUpdate;
+
+        	({
+        		result,
+        		lastUpdate
+        	} = await getThingSpeakData(CHANNELS[6]));
+        	Albina_Q = result.field3 / 3.6;
+		Albina_Maila = result.field2;
+        	const lastUpdate7 = lastUpdate;
+
+        	let lastUpdate8 = null;
+        	if (loopCount === 0 || loopCount % 20 === 0) {
+        		({
+        			value: Ullibarri_ehunekoa,
+        			lastUpdate: lastUpdate8
+        		} = await getSingleFieldData(CHANNELS[7], 2, 10));
+        	}
+
+        	displayData();
+
+        	// Azken eguneratzea 
+        	const lastUpdateFinal = lastUpdate1 || lastUpdate2 || lastUpdate3 || lastUpdate4 || lastUpdate5 || lastUpdate6 || lastUpdate7 || lastUpdate8 || 'Eguneraketarik ez';
+        	document.getElementById('last-update').textContent = `Azken eguneratzea: ${lastUpdateFinal}`;
+
+        	// Kargatzen ari den mezua ezabatu
+        	document.getElementById('loading').style.display = 'none';
+        }
+
+        // Funtzioa exekutatu datuak kargatzeko
+        main();
+        // Datuak berriro irakurri minutuero
+        setInterval(main, 60000); // 60000ms = 1 minuto
+    </script>
+</body>
+</html>
