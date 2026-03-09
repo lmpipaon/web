@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Albina_nivel_caudal_vertederos</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+
+    <script type="text/javascript">
+        var dynamicChart;
+        var channelsLoaded = 0;
+        var channelKeys = [];
+
+        // Configuración de tus canales
+        channelKeys.push(
+            { channelNumber: 2364388, name: 'Caudal', key: 'BJVOACA9IH7SYTAA', fieldList: [{ field: 6, axis: 'M3/S' }] },
+            { channelNumber: 2272863, name: 'Nivel', key: '79EBS0PGXTFMOJWH', fieldList: [{ field: 1, axis: 'MSNM' }] }
+        );
+
+        var myOffset = new Date().getTimezoneOffset();
+
+        function getChartDate(d) {
+            return Date.parse(d) - (myOffset * 60000);
+        }
+
+        $(document).ready(function() {
+            // Inicializar contadores de series
+            var seriesCounter = 0;
+            for (var i = 0; i < channelKeys.length; i++) {
+                for (var j = 0; j < channelKeys[i].fieldList.length; j++) {
+                    channelKeys[i].fieldList[j].series = seriesCounter++;
+                }
+            }
+
+            // Cargar datos de canales
+            channelKeys.forEach(function(channel, index) {
+                loadThingSpeakChannel(index, channel.channelNumber, channel.key, channel.fieldList);
+            });
+
+            function loadThingSpeakChannel(channelIndex, channelNumber, key, fieldList) {
+                $.getJSON(`https://api.thingspeak.com/channels/${channelNumber}/feeds.json?api_key=${key}&results=8000`, function(data) {
+                    if (data == '-1') {
+                        $('#chart-container').append('<p>Error: Canal privado o llave incorrecta.</p>');
+                        return;
+                    }
+
+                    fieldList.forEach(function(fieldObj) {
+                        fieldObj.data = data.feeds.map(feed => {
+                            var val = feed["field" + fieldObj.field];
+                            return [getChartDate(feed.created_at), parseFloat(val)];
+                        }).filter(p => !isNaN(p[1]));
+                        
+                        fieldObj.name = data.channel["field" + fieldObj.field] || fieldObj.axis;
+                    });
+
+                    channelKeys[channelIndex].loaded = true;
+                    channelsLoaded++;
+                    if (channelsLoaded === channelKeys.length) { createChart(); }
+                });
+            }
+
+            function createChart() {
+                var chartOptions = {
+                    chart: {
+                        renderTo: 'chart-container',
+                        zoomType: 'x',
+                        events: {
+                            load: function() {
+                                // Intervalo de actualización cada 15 segundos
+                                setInterval(function() {
+                                    if ($("#Update").is(':checked')) {
+                                        updateData();
+                                    }
+                                }, 15000);
+                            }
+                        }
+                    },
+                    rangeSelector: {
+                        buttons: [
+                            {count: 30, type: 'minute', text: '30M'},
+                            {count: 12, type: 'hour', text: '12H'},
+                            {count: 1, type: 'day', text: 'D'},
+                            {type: 'all', text: 'All'}
+                        ],
+                        selected: 2
+                    },
+                    yAxis: [
+                        { title: { text: 'M3/S' }, id: 'M3/S', height: '45%' },
+                        { title: { text: 'MSNM' }, id: 'MSNM', top: '55%', height: '45%', offset: 0, opposite: true }
+                    ],
+                    series: []
+                };
+
+                channelKeys.forEach(function(channel) {
+                    channel.fieldList.forEach(function(field) {
+                        chartOptions.series.push({
+                            name: field.name,
+                            data: field.data,
+                            yAxis: field.axis === 'MSNM' ? 1 : 0
+                        });
+                    });
+                });
+
+                dynamicChart = new Highcharts.StockChart(chartOptions);
+            }
+
+            function updateData() {
+                channelKeys.forEach(function(channel) {
+                    $.getJSON(`https://api.thingspeak.com/channels/${channel.channelNumber}/feeds/last.json?api_key=${channel.key}`, function(data) {
+                        channel.fieldList.forEach(function(field) {
+                            var val = parseFloat(data["field" + field.field]);
+                            var time = getChartDate(data.created_at);
+                            var series = dynamicChart.series.find(s => s.name === field.name);
+                            if (series && series.data.length > 0) {
+                                var lastTime = series.data[series.data.length - 1].x;
+                                if (time > lastTime && !isNaN(val)) {
+                                    series.addPoint([time, val], true, false);
+                                }
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+    <div id="chart-container" style="height: 600px; width: 100%;">Cargando datos...</div>
+    <div style="margin: 20px;">
+        <input type="checkbox" id="Update" checked> Actualización automática
+    </div>
+</body>
+</html>
