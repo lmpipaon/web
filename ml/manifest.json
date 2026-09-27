@@ -1,6 +1,6 @@
 {
-    "name": "amvisa_monitor_ligero",
-    "short_name": "amvisa_monitor_ligero",
+    "name": "amvisa_monitor",
+    "short_name": "amvisa_monitor",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
