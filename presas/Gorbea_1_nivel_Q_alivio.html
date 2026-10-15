@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/export-data.js"></script>
+    <script type="text/javascript">
+        var dynamicChart;
+        var channelsLoaded = 0;
+        var channelKeys = [];
+        channelKeys.push({channelNumber:2003390, name:'',key:'UCM3CJU612X17CUR',fieldList:[{field:6,axis:'msnm'}]},{channelNumber:2003390, name:'',key:'UCM3CJU612X17CUR',fieldList:[{field:8,axis:'m3/s'}]});
+        
+        var myOffset = new Date().getTimezoneOffset();
+
+        // Function to convert date from JSON format
+        function getChartDate(d) {
+            return Date.UTC(d.substring(0,4), d.substring(5,7)-1, d.substring(8,10), d.substring(11,13), d.substring(14,16), d.substring(17,19)) - (myOffset * 60000);
+        }
+        
+        // Hide all series
+        function HideAll() {
+            dynamicChart.series.forEach(function(series) {
+                if (series.name !== 'Navigator') {
+                    series.hide();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Show loading message
+            $('#loading-message').show();
+
+            // Set series numbers
+            let seriesCounter = 0;
+            channelKeys.forEach(function(channel) {
+                channel.fieldList.forEach(function(field) {
+                    field.series = seriesCounter++;
+                });
+            });
+            
+            // Load channel data
+            channelKeys.forEach(function(channel, index) {
+                channel.loaded = false;
+                loadThingSpeakChannel(index, channel.channelNumber, channel.key, channel.fieldList);
+            });
+
+            // Load data from ThingSpeak channel
+            function loadThingSpeakChannel(channelIndex, channelNumber, key, fieldList) {
+                $.getJSON(`https://api.thingspeak.com/channels/${channelNumber}/feed.json?offset=0&key=${key}&results=8000`, function(data) {
+                    if (data === '-1') {
+                        $('#chart-container').append('This channel is not public. To embed charts, the channel must be public or a read key must be specified.');
+                        console.log('Thingspeak Data Loading Error');
+                        return;
+                    }
+                    
+                    fieldList.forEach(function(field) {
+                        field.data = [];
+                        data.feeds.forEach(function(feed) {
+                            var value = feed[`field${field.field}`];
+                            if (!isNaN(parseFloat(value))) {
+                                field.data.push([getChartDate(feed.created_at), parseFloat(value)]);
+                            }
+                        });
+                        field.name = data.channel[`field${field.field}`];
+                    });
+                    
+                    channelKeys[channelIndex].fieldList = fieldList;
+                    channelKeys[channelIndex].loaded = true;
+                    channelsLoaded++;
+
+                    if (channelsLoaded === channelKeys.length) {
+                        createChart();
+                    }
+                }).fail(function() {
+                    alert('getJSON request failed!');
+                });
+            }
+
+            // Create chart when all data is loaded
+            function createChart() {
+                var chartOptions = {
+                    chart: {
+                        renderTo: 'chart-container',
+                        zoomType: 'y',
+                        height: null, 
+                        spacingTop: 10,
+                        spacingBottom: 60,
+                        spacingLeft: 10,
+                        spacingRight: 10
+                    },
+                    accessibility: {
+                        enabled: false
+                    },
+                    rangeSelector: {
+                        buttons: [
+                            { count: 30, type: 'minute', text: '30M' },
+                            { count: 12, type: 'hour', text: '12H' },
+                            { count: 1, type: 'day', text: 'D' },
+                            { count: 1, type: 'week', text: 'W' },
+                            { count: 1, type: 'month', text: 'M' },
+                            { count: 1, type: 'year', text: 'Y' },
+                            { type: 'all', text: 'All' }
+                        ],
+                        inputEnabled: true,
+                        selected: 4
+                    },
+                    title: { text: '' },
+                    tooltip: {
+                        valueDecimals: 1,
+                        valueSuffix: '',
+                        xDateFormat: '%Y-%m-%d<br/>%H:%M:%S %p'
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        ordinal: false,
+                        dateTimeLabelFormats: {
+                            hour: '%H:%M',
+                            minute: '%H:%M'
+                        },
+                        title: { text: 'Date' }
+                    },
+                    yAxis: [{
+                        title: { text: 'msnm' },
+                        id: 'msnm'
+                    },
+                    {
+                        title: { text: 'm3/s' },
+                        opposite: true,
+                        id: 'm3/s'
+                    }],
+                    exporting: { enabled: true },
+                    legend: { enabled: true, layout: 'horizontal', align: 'center', verticalAlign: 'bottom' },
+                    series: []
+                };
+
+                // Add all channel data to the chart
+                channelKeys.forEach(function(channel) {
+                    channel.fieldList.forEach(function(field) {
+                        chartOptions.series.push({
+                            data: field.data,
+                            index: field.series,
+                            yAxis: field.axis,
+                            name: field.name
+                        });
+                    });
+                });
+                
+                // Draw the chart using modern syntax
+                dynamicChart = Highcharts.stockChart('chart-container', chartOptions);
+
+                // Hide loading message and show the chart
+                $('#loading-message').hide();
+            }
+        });
+    </script>
+    <title>Gorbea_1_nivel_Q_alivio</title>
+    <style>
+        #chart-container {
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+        }
+        #loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            color: #000;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-message">Loading data, please wait...</div>
+    <div id="chart-container"></div>
+</body>
+</html>
