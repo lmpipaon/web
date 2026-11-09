@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor Industrial 16 Bits - Alarmas</title>
+  <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --card-bg: #2a2a3c;
+      --text-color: #cdd6f4;
+      --led-off: #a6e3a1;         /* Verde fijo cuando el bit es 0 */
+      --led-off-shadow: #a6e3a1aa;
+      --led-on: #f38ba8;          /* Rojo intermitente cuando el bit es 1 */
+      --led-on-shadow: #f38ba8aa;
+      --accent: #89b4fa;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      max-width: 650px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      font-size: 1.4rem;
+    }
+
+    /* Pantalla de registro de nuevo dispositivo */
+    #registrationScreen {
+      display: none;
+      padding: 1rem;
+    }
+
+    .device-id-box {
+      background-color: #11111b;
+      border: 1px dashed var(--accent);
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      font-family: monospace;
+      font-size: 1.3rem;
+      color: #f9e2af;
+      letter-spacing: 2px;
+    }
+
+    /* Monitor de LEDs en 2 columnas verticales */
+    #appContent {
+      display: none;
+    }
+
+    .led-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr); /* 2 columnas */
+      gap: 12px 20px;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+
+    .led-item {
+      display: flex;
+      align-items: center;
+      background: #11111b;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #45475a;
+    }
+
+    .led {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: var(--led-off);
+      border: 2px solid #222;
+      box-shadow: 0 0 8px var(--led-off-shadow);
+      flex-shrink: 0;
+      margin-right: 12px;
+      transition: background-color 0.3s ease;
+    }
+
+    /* Animación de parpadeo para el estado de alarma (Bit 1 = Rojo) */
+    @keyframes parpadeoRojo {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .led.on {
+      background-color: var(--led-on);
+      box-shadow: 0 0 12px var(--led-on-shadow);
+      animation: parpadeoRojo 1s infinite;
+    }
+
+    .led-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .led-bit-label {
+      font-size: 0.65rem;
+      color: #a6adc8;
+      font-family: monospace;
+    }
+
+    .led-text {
+      font-size: 0.85rem;
+      color: #cdd6f4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .info-panel {
+      font-size: 0.95rem;
+      border-top: 1px solid #45475a;
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .val-binary {
+      font-family: monospace;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      color: #f9e2af;
+    }
+
+    .timestamp {
+      color: #a6adc8;
+      font-size: 0.85rem;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      background-color: #f38ba8;
+    }
+    .status-dot.ok { background-color: #a6e3a1; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- REGISTRO PRIMERA VEZ -->
+    <div id="registrationScreen">
+      <h2>Nuevo Dispositivo Detectado</h2>
+      <p style="color: #a6adc8; font-size: 0.9rem;">Se ha generado un identificador único para este terminal:</p>
+      
+      <div class="device-id-box" id="displayDeviceId">DEV-XXXXXX</div>
+      
+      <p style="color: #a6adc8; font-size: 0.85rem;">Este código se registrará automáticamente en la hoja de control de la empresa.</p>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL DE MONITORIZACIÓN -->
+    <div id="appContent">
+      <h2>Estado de Alarmas (16 Bits)</h2>
+      
+      <div class="led-grid" id="ledContainer"></div>
+
+      <div class="info-panel">
+        <div>Valor leído: <strong id="valDecimal">--</strong> (<span class="val-binary" id="valBinary">----------------</span>)</div>
+        <div class="timestamp">Última actualización dato: <span id="timestamp">--</span></div>
+        <div class="timestamp"><span class="status-dot" id="statusDot"></span><span id="statusText">Conectando...</span></div>
+      </div>
+    </div>
+  </div>
+<script>
+    // --- CONFIGURACIÓN ---
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZ658g2zLE2ayD-yMQ3Od6bXjEXffo-VKwm4Il1f_JGd9D5zbL-1BEIRnQjck1UPxyPQ/exec'; 
+    const CHANNEL_ID = '1635744';
+    const FIELD_NUM = 2;
+    const READ_API_KEY = 'NR7SD8EF2EOOZTWX'; 
+    const FETCH_INTERVAL_MS = 30000; // 1 minuto
+
+    const COOKIE_NAME = 'industrial_device_auth';
+
+    // Textos genéricos para cada uno de los 16 bits (Índice 0 a 15)
+    const NOMBRES_ALARMAS = [
+      "Alarma General 0",   // Bit 0
+      "Fallo Bomba 1",      // Bit 1
+      "Nivel Alto Depósito",// Bit 2
+      "Fallo Presión Red",  // Bit 3
+      "Sobrecarga Motor A", // Bit 4
+      "Sobrecarga Motor B", // Bit 5
+      "Error Comunicación", // Bit 6
+      "Paro de Emergencia", // Bit 7
+      "Aviso Mantenimiento",// Bit 8
+      "Fallo Válvula 1",    // Bit 9
+      "Fallo Válvula 2",    // Bit 10
+      "Temperatura Alta",   // Bit 11
+      "Fallo Suministro DC",// Bit 12
+      "Batería Baja UPS",   // Bit 13
+      "Puerta Tablero Abierta",// Bit 14
+      "Alarma Crítica 15"   // Bit 15
+    ];
+
+    function generateDeviceId() {
+      const randomHex = Math.random().toString(16).substring(2, 8).toUpperCase();
+      return `DEV-${randomHex}`;
+    }
+
+    function setCookie(name, value, days) {
+      let expires = "";
+      if (days) {
+        let date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Strict";
+    }
+
+    function getCookie(name) {
+      let nameEQ = name + "=";
+      let ca = document.cookie.split(';');
+      for(let i=0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+      }
+      return null;
+    }
+
+    function getHardwareInfo() {
+      const ua = navigator.userAgent;
+      const platform = navigator.platform || 'Desconocida';
+      const screenRes = `${window.screen.width}x${window.screen.height}`;
+      return `${platform} | Res: ${screenRes} | ${ua}`;
+    }
+
+    async function verificarAcceso() {
+      let deviceId = getCookie(COOKIE_NAME);
+      let isNewDevice = false;
+
+      if (!deviceId) {
+        deviceId = generateDeviceId();
+        setCookie(COOKIE_NAME, deviceId, 1825); 
+        isNewDevice = true;
+
+        document.getElementById('registrationScreen').style.display = 'block';
+        document.getElementById('displayDeviceId').textContent = deviceId;
+      }
+
+      const deviceInfo = getHardwareInfo();
+
+      try {
+        const url = `${GOOGLE_SCRIPT_URL}?action=check&id=${encodeURIComponent(deviceId)}&info=${encodeURIComponent(deviceInfo)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.allowed) {
+          if (isNewDevice) {
+            setTimeout(() => {
+              document.getElementById('registrationScreen').style.display = 'none';
+              iniciarAppPrincipal();
+            }, 3000);
+          } else {
+            iniciarAppPrincipal();
+          }
+        } else {
+          document.getElementById('registrationScreen').style.display = 'block';
+          document.getElementById('displayDeviceId').textContent = "ACCESO DENEGADO";
+        }
+      } catch (err) {
+        console.error("Error al conectar con el servidor de autorizaciones:", err);
+      }
+    }
+
+    const leds = [];
+    function iniciarAppPrincipal() {
+      document.getElementById('appContent').style.display = 'block';
+      
+      const ledContainer = document.getElementById('ledContainer');
+      ledContainer.innerHTML = '';
+      
+      // ORDEN BIG ENDIAN: Columna izquierda del 8 al 15, Columna derecha del 0 al 7
+      for (let i = 0; i < 8; i++) {
+        // Elemento Izquierda (Bits 8 al 15)
+        const bitIzq = i + 8;
+        crearElementoLed(bitIzq, ledContainer);
+
+        // Elemento Derecha (Bits 0 al 7)
+        const bitDer = i;
+        crearElementoLed(bitDer, ledContainer);
+      }
+
+      fetchLatestData();
+      setInterval(fetchLatestData, FETCH_INTERVAL_MS);
+    }
+
+    function crearElementoLed(bit, container) {
+      const item = document.createElement('div');
+      item.className = 'led-item';
+      
+      const led = document.createElement('div');
+      led.className = 'led';
+      
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'led-info';
+      
+      const bitLabel = document.createElement('span');
+      bitLabel.className = 'led-bit-label';
+      bitLabel.textContent = `BIT ${bit}`;
+      
+      const textLabel = document.createElement('span');
+      textLabel.className = 'led-text';
+      textLabel.textContent = NOMBRES_ALARMAS[bit];
+      
+      infoDiv.appendChild(bitLabel);
+      infoDiv.appendChild(textLabel);
+      
+      item.appendChild(led);
+      item.appendChild(infoDiv);
+      container.appendChild(item);
+
+      leds[bit] = led;
+    }
+
+    function updateLeds(value) {
+      for (let bit = 0; bit < 16; bit++) {
+        const isBitOn = (value & (1 << bit)) !== 0;
+        if (isBitOn) {
+          leds[bit].classList.add('on');    // Si es 1 -> Rojo intermitente (Alarma)
+        } else {
+          leds[bit].classList.remove('on'); // Si es 0 -> Verde fijo (Normal)
+        }
+      }
+    }
+
+    function formatToHumanDate(isoString) {
+      if (!isoString) return '--';
+      return new Date(isoString).toLocaleString(undefined, {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    }
+
+    async function fetchLatestData() {
+      let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/fields/${FIELD_NUM}/last.json`;
+      if (READ_API_KEY) url += `?api_key=${READ_API_KEY}`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        const rawValue = data[`field${FIELD_NUM}`];
+
+        if (rawValue !== null && rawValue !== undefined) {
+          const numericValue = parseInt(rawValue, 10) & 0xFFFF;
+          
+          document.getElementById('valDecimal').textContent = numericValue;
+          document.getElementById('valBinary').textContent = numericValue.toString(2).padStart(16, '0');
+          document.getElementById('timestamp').textContent = formatToHumanDate(data.created_at);
+          
+          updateLeds(numericValue);
+
+          document.getElementById('statusDot').className = 'status-dot ok';
+          document.getElementById('statusText').textContent = `Actualizado a las ${new Date().toLocaleTimeString()}`;
+        }
+      } catch (err) {
+        document.getElementById('statusDot').className = 'status-dot';
+        document.getElementById('statusText').textContent = `Error de lectura ThingSpeak`;
+      }
+    }
+
+    verificarAcceso();
+  </script>
+</body>
+</html>
