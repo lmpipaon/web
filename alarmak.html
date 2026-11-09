@@ -9,9 +9,9 @@
       --bg-color: #1e1e2e;
       --card-bg: #2a2a3c;
       --text-color: #cdd6f4;
-      --led-off: #a6e3a1;         /* Verde fijo cuando el bit es 0 */
+      --led-off: #a6e3a1;         
       --led-off-shadow: #a6e3a1aa;
-      --led-on: #f38ba8;          /* Rojo intermitente cuando el bit es 1 */
+      --led-on: #f38ba8;          
       --led-on-shadow: #f38ba8aa;
       --accent: #89b4fa;
     }
@@ -45,7 +45,6 @@
       font-size: 1.4rem;
     }
 
-    /* Pantalla de bloqueo / registro manual */
     #authScreen {
       display: none;
       padding: 1rem;
@@ -87,7 +86,6 @@
       line-height: 1.4;
     }
 
-    /* Monitor de LEDs */
     #appContent {
       display: none;
     }
@@ -188,20 +186,18 @@
 <body>
 
   <div class="container">
-    <!-- PANTALLA DE BLOQUEO / AUTORIZACIÓN MANUAL -->
     <div id="authScreen">
       <h2>Dispositivo No Autorizado</h2>
       <p class="auth-msg">Este terminal no está registrado en la hoja de control de acceso. Anota el identificador generado:</p>
       
       <div class="device-id-box" id="displayDeviceId">DEV-------</div>
       
-      <p class="auth-msg">Inserta este código en la columna <strong>Device_ID</strong> de tu Google Sheet y pulsa el botón cuando esté autorizado.</p>
+      <p class="auth-msg">Inserta este código en tu Google Sheet junto con su Channel ID y API Key, y pulsa el botón cuando esté listo.</p>
       
       <button class="btn-verify" onclick="comprobarAccesoConServidor()">Verificar Acceso</button>
       <p id="errorAuthMsg" style="color: #f38ba8; font-size: 0.85rem; margin-top: 1rem;"></p>
     </div>
 
-    <!-- PANTALLA PRINCIPAL DE MONITORIZACIÓN -->
     <div id="appContent">
       <h2>Estado de Alarmas (16 Bits)</h2>
       
@@ -216,14 +212,16 @@
   </div>
 
   <script>
-    // --- CONFIGURACIÓN ---
+    // --- CONFIGURACIÓN MÍNIMA (Solo la URL del script y el Field de lectura) ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZ658g2zLE2ayD-yMQ3Od6bXjEXffo-VKwm4Il1f_JGd9D5zbL-1BEIRnQjck1UPxyPQ/exec'; 
-    const CHANNEL_ID = '1635744';
     const FIELD_NUM = 2;
-    const READ_API_KEY = 'NR7SD8EF2EOOZTWX'; 
-    const FETCH_INTERVAL_MS = 30000; // 0.5 minuto
+    const FETCH_INTERVAL_MS = 60000; // 1 minuto
 
     const COOKIE_NAME = 'industrial_device_auth';
+
+    // Variables globales que vendrán de la hoja de Google
+    let dynamicChannelId = "";
+    let dynamicApiKey = "";
 
     const NOMBRES_ALARMAS = [
       "Alarma General 0",   // Bit 0
@@ -283,20 +281,18 @@
       currentDeviceId = getCookie(COOKIE_NAME);
 
       if (!currentDeviceId) {
-        // Si no tiene cookie, se genera uno nuevo pero NO se autoriza automáticamente
         currentDeviceId = generateDeviceId();
         document.getElementById('displayDeviceId').textContent = currentDeviceId;
         document.getElementById('authScreen').style.display = 'block';
         return;
       }
 
-      // Si ya tiene cookie, comprobamos directamente con el servidor
       comprobarAccesoConServidor();
     }
 
     async function comprobarAccesoConServidor() {
       const errorMsg = document.getElementById('errorAuthMsg');
-      errorMsg.textContent = "Comprobando autorización...";
+      errorMsg.textContent = "Comprobando autorización y credenciales...";
 
       const deviceInfo = getHardwareInfo();
 
@@ -306,12 +302,14 @@
         const data = await res.json();
 
         if (data.allowed) {
-          // Si está autorizado, guardamos la cookie por 5 años y abrimos la app
+          // Capturamos el Channel ID y la API Key devueltos por la hoja de Google
+          dynamicChannelId = data.channelId;
+          dynamicApiKey = data.apiKey;
+
           setCookie(COOKIE_NAME, currentDeviceId, 1825);
           document.getElementById('authScreen').style.display = 'none';
           iniciarAppPrincipal();
         } else {
-          // Si no está en la lista blanca de la hoja de cálculo
           document.getElementById('displayDeviceId').textContent = currentDeviceId;
           document.getElementById('authScreen').style.display = 'block';
           errorMsg.textContent = "Acceso denegado: El ID no figura en la lista blanca de la hoja.";
@@ -390,8 +388,10 @@
     }
 
     async function fetchLatestData() {
-      let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/fields/${FIELD_NUM}/last.json`;
-      if (READ_API_KEY) url += `?api_key=${READ_API_KEY}`;
+      if (!dynamicChannelId) return;
+
+      let url = `https://api.thingspeak.com/channels/${dynamicChannelId}/fields/${FIELD_NUM}/last.json`;
+      if (dynamicApiKey) url += `?api_key=${dynamicApiKey}`;
 
       try {
         const response = await fetch(url);
@@ -418,7 +418,6 @@
       }
     }
 
-    // Iniciar control de seguridad
     inicializarSeguridad();
   </script>
 </body>
