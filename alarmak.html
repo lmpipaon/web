@@ -9,9 +9,9 @@
       --bg-color: #1e1e2e;
       --card-bg: #2a2a3c;
       --text-color: #cdd6f4;
-      --led-off: #a6e3a1;         
+      --led-off: #a6e3a1;         /* Verde fijo cuando el bit es 0 */
       --led-off-shadow: #a6e3a1aa;
-      --led-on: #f38ba8;          
+      --led-on: #f38ba8;          /* Rojo intermitente cuando el bit es 1 */
       --led-on-shadow: #f38ba8aa;
       --accent: #89b4fa;
     }
@@ -45,6 +45,7 @@
       font-size: 1.4rem;
     }
 
+    /* Pantalla de bloqueo / registro manual */
     #authScreen {
       display: none;
       padding: 1rem;
@@ -86,6 +87,7 @@
       line-height: 1.4;
     }
 
+    /* Monitor de LEDs */
     #appContent {
       display: none;
     }
@@ -186,6 +188,7 @@
 <body>
 
   <div class="container">
+    <!-- PANTALLA DE BLOQUEO / AUTORIZACIÓN MANUAL -->
     <div id="authScreen">
       <h2>Dispositivo No Autorizado</h2>
       <p class="auth-msg">Este terminal no está registrado en la hoja de control de acceso. Anota el identificador generado:</p>
@@ -198,6 +201,7 @@
       <p id="errorAuthMsg" style="color: #f38ba8; font-size: 0.85rem; margin-top: 1rem;"></p>
     </div>
 
+    <!-- PANTALLA PRINCIPAL DE MONITORIZACIÓN -->
     <div id="appContent">
       <h2>Estado de Alarmas (16 Bits)</h2>
       
@@ -212,14 +216,13 @@
   </div>
 
   <script>
-    // --- CONFIGURACIÓN MÍNIMA (Solo la URL del script y el Field de lectura) ---
+    // --- CONFIGURACIÓN ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZ658g2zLE2ayD-yMQ3Od6bXjEXffo-VKwm4Il1f_JGd9D5zbL-1BEIRnQjck1UPxyPQ/exec'; 
     const FIELD_NUM = 2;
     const FETCH_INTERVAL_MS = 60000; // 1 minuto
 
     const COOKIE_NAME = 'industrial_device_auth';
 
-    // Variables globales que vendrán de la hoja de Google
     let dynamicChannelId = "";
     let dynamicApiKey = "";
 
@@ -282,41 +285,53 @@
 
       if (!currentDeviceId) {
         currentDeviceId = generateDeviceId();
+        console.log("No se encontró cookie. Generado nuevo Device ID:", currentDeviceId);
         document.getElementById('displayDeviceId').textContent = currentDeviceId;
         document.getElementById('authScreen').style.display = 'block';
         return;
       }
 
+      console.log("Cookie encontrada con Device ID:", currentDeviceId);
       comprobarAccesoConServidor();
     }
 
     async function comprobarAccesoConServidor() {
       const errorMsg = document.getElementById('errorAuthMsg');
-      errorMsg.textContent = "Comprobando autorización y credenciales...";
+      errorMsg.textContent = "Comprobando autorización con el servidor...";
 
       const deviceInfo = getHardwareInfo();
+      const url = `${GOOGLE_SCRIPT_URL}?action=check&id=${encodeURIComponent(currentDeviceId)}&info=${encodeURIComponent(deviceInfo)}`;
+      
+      console.log("Realizando petición a URL:", url);
 
       try {
-        const url = `${GOOGLE_SCRIPT_URL}?action=check&id=${encodeURIComponent(currentDeviceId)}&info=${encodeURIComponent(deviceInfo)}`;
         const res = await fetch(url);
-        const data = await res.json();
+        console.log("Estado HTTP de la respuesta:", res.status);
+        
+        const textResponse = await res.text();
+        console.log("Texto bruto devuelto por Google Apps Script:", textResponse);
+
+        const data = JSON.parse(textResponse);
+        console.log("JSON parseado recibido:", data);
 
         if (data.allowed) {
-          // Capturamos el Channel ID y la API Key devueltos por la hoja de Google
           dynamicChannelId = data.channelId;
           dynamicApiKey = data.apiKey;
+
+          console.log("Acceso Permitido. Canal ID:", dynamicChannelId, "API Key:", dynamicApiKey ? "Configurada" : "Vacía");
 
           setCookie(COOKIE_NAME, currentDeviceId, 1825);
           document.getElementById('authScreen').style.display = 'none';
           iniciarAppPrincipal();
         } else {
+          console.warn("Acceso Denegado por el servidor para el ID:", currentDeviceId);
           document.getElementById('displayDeviceId').textContent = currentDeviceId;
           document.getElementById('authScreen').style.display = 'block';
-          errorMsg.textContent = "Acceso denegado: El ID no figura en la lista blanca de la hoja.";
+          errorMsg.textContent = "Acceso denegado: El ID no figura o no coincide exactamente en la hoja.";
         }
       } catch (err) {
-        console.error("Error al conectar:", err);
-        errorMsg.textContent = "Error de red al verificar con el servidor.";
+        console.error("Error crítico al procesar la respuesta del servidor:", err);
+        errorMsg.textContent = "Error de red o de formato JSON en la respuesta. Revisa la consola (F12).";
       }
     }
 
@@ -388,7 +403,10 @@
     }
 
     async function fetchLatestData() {
-      if (!dynamicChannelId) return;
+      if (!dynamicChannelId) {
+        console.warn("No hay Channel ID configurado para realizar la lectura de ThingSpeak.");
+        return;
+      }
 
       let url = `https://api.thingspeak.com/channels/${dynamicChannelId}/fields/${FIELD_NUM}/last.json`;
       if (dynamicApiKey) url += `?api_key=${dynamicApiKey}`;
@@ -413,11 +431,13 @@
           document.getElementById('statusText').textContent = `Actualizado a las ${new Date().toLocaleTimeString()}`;
         }
       } catch (err) {
+        console.error("Error al leer de ThingSpeak:", err);
         document.getElementById('statusDot').className = 'status-dot';
         document.getElementById('statusText').textContent = `Error de lectura ThingSpeak`;
       }
     }
 
+    // Iniciar control de seguridad
     inicializarSeguridad();
   </script>
 </body>
