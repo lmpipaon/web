@@ -45,8 +45,8 @@
       font-size: 1.4rem;
     }
 
-    /* Pantalla de registro de nuevo dispositivo */
-    #registrationScreen {
+    /* Pantalla de bloqueo / registro manual */
+    #authScreen {
       display: none;
       padding: 1rem;
     }
@@ -58,19 +58,43 @@
       border-radius: 8px;
       margin: 1.5rem 0;
       font-family: monospace;
-      font-size: 1.3rem;
+      font-size: 1.4rem;
       color: #f9e2af;
       letter-spacing: 2px;
     }
 
-    /* Monitor de LEDs en 2 columnas verticales */
+    .btn-verify {
+      background-color: var(--accent);
+      color: #11111b;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 1rem;
+      transition: opacity 0.2s;
+    }
+
+    .btn-verify:hover {
+      opacity: 0.9;
+    }
+
+    .auth-msg {
+      font-size: 0.85rem;
+      color: #a6adc8;
+      margin-top: 1rem;
+      line-height: 1.4;
+    }
+
+    /* Monitor de LEDs */
     #appContent {
       display: none;
     }
 
     .led-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr); /* 2 columnas */
+      grid-template-columns: repeat(2, 1fr);
       gap: 12px 20px;
       margin-bottom: 2rem;
       text-align: left;
@@ -97,7 +121,6 @@
       transition: background-color 0.3s ease;
     }
 
-    /* Animación de parpadeo para el estado de alarma (Bit 1 = Rojo) */
     @keyframes parpadeoRojo {
       0% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.3; transform: scale(0.92); }
@@ -165,14 +188,17 @@
 <body>
 
   <div class="container">
-    <!-- REGISTRO PRIMERA VEZ -->
-    <div id="registrationScreen">
-      <h2>Nuevo Dispositivo Detectado</h2>
-      <p style="color: #a6adc8; font-size: 0.9rem;">Se ha generado un identificador único para este terminal:</p>
+    <!-- PANTALLA DE BLOQUEO / AUTORIZACIÓN MANUAL -->
+    <div id="authScreen">
+      <h2>Dispositivo No Autorizado</h2>
+      <p class="auth-msg">Este terminal no está registrado en la hoja de control de acceso. Anota el identificador generado:</p>
       
-      <div class="device-id-box" id="displayDeviceId">DEV-XXXXXX</div>
+      <div class="device-id-box" id="displayDeviceId">DEV-------</div>
       
-      <p style="color: #a6adc8; font-size: 0.85rem;">Este código se registrará automáticamente en la hoja de control de la empresa.</p>
+      <p class="auth-msg">Inserta este código en la columna <strong>Device_ID</strong> de tu Google Sheet y pulsa el botón cuando esté autorizado.</p>
+      
+      <button class="btn-verify" onclick="comprobarAccesoConServidor()">Verificar Acceso</button>
+      <p id="errorAuthMsg" style="color: #f38ba8; font-size: 0.85rem; margin-top: 1rem;"></p>
     </div>
 
     <!-- PANTALLA PRINCIPAL DE MONITORIZACIÓN -->
@@ -188,17 +214,17 @@
       </div>
     </div>
   </div>
-<script>
+
+  <script>
     // --- CONFIGURACIÓN ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZ658g2zLE2ayD-yMQ3Od6bXjEXffo-VKwm4Il1f_JGd9D5zbL-1BEIRnQjck1UPxyPQ/exec'; 
     const CHANNEL_ID = '1635744';
     const FIELD_NUM = 2;
     const READ_API_KEY = 'NR7SD8EF2EOOZTWX'; 
-    const FETCH_INTERVAL_MS = 30000; // 1 minuto
+    const FETCH_INTERVAL_MS = 60000; // 1 minuto
 
     const COOKIE_NAME = 'industrial_device_auth';
 
-    // Textos genéricos para cada uno de los 16 bits (Índice 0 a 15)
     const NOMBRES_ALARMAS = [
       "Alarma General 0",   // Bit 0
       "Fallo Bomba 1",      // Bit 1
@@ -251,44 +277,52 @@
       return `${platform} | Res: ${screenRes} | ${ua}`;
     }
 
-    async function verificarAcceso() {
-      let deviceId = getCookie(COOKIE_NAME);
-      let isNewDevice = false;
+    let currentDeviceId = "";
 
-      if (!deviceId) {
-        deviceId = generateDeviceId();
-        setCookie(COOKIE_NAME, deviceId, 1825); 
-        isNewDevice = true;
+    async function inicializarSeguridad() {
+      currentDeviceId = getCookie(COOKIE_NAME);
 
-        document.getElementById('registrationScreen').style.display = 'block';
-        document.getElementById('displayDeviceId').textContent = deviceId;
+      if (!currentDeviceId) {
+        // Si no tiene cookie, se genera uno nuevo pero NO se autoriza automáticamente
+        currentDeviceId = generateDeviceId();
+        document.getElementById('displayDeviceId').textContent = currentDeviceId;
+        document.getElementById('authScreen').style.display = 'block';
+        return;
       }
+
+      // Si ya tiene cookie, comprobamos directamente con el servidor
+      comprobarAccesoConServidor();
+    }
+
+    async function comprobarAccesoConServidor() {
+      const errorMsg = document.getElementById('errorAuthMsg');
+      errorMsg.textContent = "Comprobando autorización...";
 
       const deviceInfo = getHardwareInfo();
 
       try {
-        const url = `${GOOGLE_SCRIPT_URL}?action=check&id=${encodeURIComponent(deviceId)}&info=${encodeURIComponent(deviceInfo)}`;
+        const url = `${GOOGLE_SCRIPT_URL}?action=check&id=${encodeURIComponent(currentDeviceId)}&info=${encodeURIComponent(deviceInfo)}`;
         const res = await fetch(url);
         const data = await res.json();
 
         if (data.allowed) {
-          if (isNewDevice) {
-            setTimeout(() => {
-              document.getElementById('registrationScreen').style.display = 'none';
-              iniciarAppPrincipal();
-            }, 3000);
-          } else {
-            iniciarAppPrincipal();
-          }
+          // Si está autorizado, guardamos la cookie por 5 años y abrimos la app
+          setCookie(COOKIE_NAME, currentDeviceId, 1825);
+          document.getElementById('authScreen').style.display = 'none';
+          iniciarAppPrincipal();
         } else {
-          document.getElementById('registrationScreen').style.display = 'block';
-          document.getElementById('displayDeviceId').textContent = "ACCESO DENEGADO";
+          // Si no está en la lista blanca de la hoja de cálculo
+          document.getElementById('displayDeviceId').textContent = currentDeviceId;
+          document.getElementById('authScreen').style.display = 'block';
+          errorMsg.textContent = "Acceso denegado: El ID no figura en la lista blanca de la hoja.";
         }
       } catch (err) {
-        console.error("Error al conectar con el servidor de autorizaciones:", err);
+        console.error("Error al conectar:", err);
+        errorMsg.textContent = "Error de red al verificar con el servidor.";
       }
     }
 
+    // --- LÓGICA DE THINGSPEAK Y LEDS (BIG ENDIAN) ---
     const leds = [];
     function iniciarAppPrincipal() {
       document.getElementById('appContent').style.display = 'block';
@@ -296,13 +330,10 @@
       const ledContainer = document.getElementById('ledContainer');
       ledContainer.innerHTML = '';
       
-      // ORDEN BIG ENDIAN: Columna izquierda del 8 al 15, Columna derecha del 0 al 7
       for (let i = 0; i < 8; i++) {
-        // Elemento Izquierda (Bits 8 al 15)
         const bitIzq = i + 8;
         crearElementoLed(bitIzq, ledContainer);
 
-        // Elemento Derecha (Bits 0 al 7)
         const bitDer = i;
         crearElementoLed(bitDer, ledContainer);
       }
@@ -343,9 +374,9 @@
       for (let bit = 0; bit < 16; bit++) {
         const isBitOn = (value & (1 << bit)) !== 0;
         if (isBitOn) {
-          leds[bit].classList.add('on');    // Si es 1 -> Rojo intermitente (Alarma)
+          leds[bit].classList.add('on');
         } else {
-          leds[bit].classList.remove('on'); // Si es 0 -> Verde fijo (Normal)
+          leds[bit].classList.remove('on');
         }
       }
     }
@@ -387,7 +418,8 @@
       }
     }
 
-    verificarAcceso();
+    // Iniciar control de seguridad
+    inicializarSeguridad();
   </script>
 </body>
 </html>
