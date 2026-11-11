@@ -219,7 +219,7 @@
     // --- CONFIGURACIÓN ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZ658g2zLE2ayD-yMQ3Od6bXjEXffo-VKwm4Il1f_JGd9D5zbL-1BEIRnQjck1UPxyPQ/exec'; 
     const FIELD_NUM = 2;
-    const FETCH_INTERVAL_MS = 60000; // 1 minuto
+    const FETCH_INTERVAL_MS = 15000; // 1 minuto
 
     const COOKIE_NAME = 'industrial_device_auth';
 
@@ -227,7 +227,7 @@
     let dynamicApiKey = "";
 
     const NOMBRES_ALARMAS = [
-      "Alarma General 0",   // Bit 0
+      "Fuga de Cloro 1",   // Bit 0
       "Fallo Bomba 1",      // Bit 1
       "Nivel Alto Depósito",// Bit 2
       "Fallo Presión Red",  // Bit 3
@@ -235,14 +235,14 @@
       "Sobrecarga Motor B", // Bit 5
       "Error Comunicación", // Bit 6
       "Paro de Emergencia", // Bit 7
-      "Aviso Mantenimiento",// Bit 8
-      "Fallo Válvula 1",    // Bit 9
-      "Fallo Válvula 2",    // Bit 10
-      "Temperatura Alta",   // Bit 11
-      "Fallo Suministro DC",// Bit 12
-      "Batería Baja UPS",   // Bit 13
-      "Puerta Tablero Abierta",// Bit 14
-      "Alarma Crítica 15"   // Bit 15
+      "Fuga de Cloro 1",// Bit 8
+      "Fuga de Cloro 2",    // Bit 9
+      "Defecto agua",    // Bit 10
+      "Defecto aire",   // Bit 11
+      "Revose obra de llegada",// Bit 12
+      "Presion incendios",   // Bit 13
+      "Presion cloro",// Bit 14
+      "Reserva 1"   // Bit 15
     ];
 
     function generateDeviceId() {
