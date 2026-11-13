@@ -92,6 +92,7 @@
       display: none;
     }
 
+    /* Contenedor principal de las 2 columnas para PC */
     .led-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -100,6 +101,14 @@
       text-align: left;
     }
 
+    /* Cada columna agrupa sus 8 LEDs */
+    .led-column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* En móviles pasan a ocupar todo el ancho, apilándose una columna debajo de la otra */
     @media (max-width: 600px) {
       .led-grid {
         grid-template-columns: 1fr;
@@ -208,7 +217,10 @@
     <div id="appContent">
       <h2>Alarmas</h2>
       
-      <div class="led-grid" id="ledContainer"></div>
+      <div class="led-grid">
+        <div class="led-column" id="colIzquierda"></div>
+        <div class="led-column" id="colDerecha"></div>
+      </div>
 
       <div class="info-panel">
         <div class="timestamp">Última actualización dato: <span id="timestamp">--</span></div>
@@ -327,14 +339,19 @@
     function iniciarAppPrincipal() {
       document.getElementById('appContent').style.display = 'block';
       
-      const ledContainer = document.getElementById('ledContainer');
-      ledContainer.innerHTML = '';
-      
+      const colIzquierda = document.getElementById('colIzquierda');
+      const colDerecha = document.getElementById('colDerecha');
+      colIzquierda.innerHTML = '';
+      colDerecha.innerHTML = '';
+
+      // Columna Izquierda: Bits 8 al 15
       for (let i = 8; i <= 15; i++) {
-        crearElementoLed(i, ledContainer);
+        crearElementoLed(i, colIzquierda);
       }
+
+      // Columna Derecha: Bits 0 al 7
       for (let i = 0; i <= 7; i++) {
-        crearElementoLed(i, ledContainer);
+        crearElementoLed(i, colDerecha);
       }
 
       fetchLatestData();
