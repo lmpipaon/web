@@ -196,15 +196,20 @@
     <div id="authScreen">
       <h2>Dispositivo No Autorizado</h2>
       <p class="auth-msg">Este terminal no está registrado en la hoja de control de acceso. Anota el identificador generado:</p>
+      
       <div class="device-id-box" id="displayDeviceId">DEV-------</div>
+      
       <p class="auth-msg">Inserta este código en tu Google Sheet junto con su Channel ID y API Key, y pulsa el botón cuando esté listo.</p>
+      
       <button class="btn-verify" onclick="comprobarAccesoConServidor()">Verificar Acceso</button>
       <p id="errorAuthMsg" style="color: #f38ba8; font-size: 0.85rem; margin-top: 1rem;"></p>
     </div>
 
     <div id="appContent">
       <h2>Alarmas</h2>
+      
       <div class="led-grid" id="ledContainer"></div>
+
       <div class="info-panel">
         <div class="timestamp">Última actualización dato: <span id="timestamp">--</span></div>
         <div class="timestamp"><span class="status-dot" id="statusDot"></span><span id="statusText">Conectando...</span></div>
@@ -213,12 +218,10 @@
   </div>
 
   <script>
-    const _0x1a = ['aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy8=', 'QUtmeWNieVo2NThnMnpMRTJheUQt', 'eU1RM09kNmJYakVYZmZvLVZLd200', 'SWwxZl9KR2Q5RDV6YkwxQkVJUm5R', 'amNrMVVQeHlQUS9leGVj'];
-    const _0x2b = ['aHR0cHM6Ly9hcGkudGhpbmdzcGVhay5jb20vY2hhbm5lbHMv', 'L2ZpZWxkcy8=', 'L2xhc3QuanNvbg=='];
-    const _d = (arr) => arr.map(s => atob(s)).join('');
-
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZ658g2zLE2ayD-yMQ3Od6bXjEXffo-VKwm4Il1f_JGd9D5zbL-1BEIRnQjck1UPxyPQ/exec'; 
     const FIELD_NUM = 2;
     const FETCH_INTERVAL_MS = 15000;
+
     const COOKIE_NAME = 'industrial_device_auth';
 
     let dynamicChannelId = "";
@@ -296,8 +299,7 @@
       errorMsg.textContent = "Comprobando autorización con el servidor...";
 
       const deviceInfo = getHardwareInfo();
-      const baseEp = _d(_0x1a);
-      const url = `${baseEp}?action=check&id=${encodeURIComponent(currentDeviceId)}&info=${encodeURIComponent(deviceInfo)}`;
+      const url = `${GOOGLE_SCRIPT_URL}?action=check&id=${encodeURIComponent(currentDeviceId)}&info=${encodeURIComponent(deviceInfo)}`;
 
       try {
         const res = await fetch(url);
@@ -389,12 +391,12 @@
     async function fetchLatestData() {
       if (!dynamicChannelId) return;
 
-      let url = `${atob(_0x2b[0])}${dynamicChannelId}${atob(_0x2b[1])}${FIELD_NUM}${atob(_0x2b[2])}`;
+      let url = `https://api.thingspeak.com/channels/${dynamicChannelId}/fields/${FIELD_NUM}/last.json`;
       if (dynamicApiKey) url += `?api_key=${dynamicApiKey}`;
 
       try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
         const rawValue = data[`field${FIELD_NUM}`];
