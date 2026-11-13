@@ -25,18 +25,19 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      padding: 20px;
+      padding: 10px;
       box-sizing: border-box;
     }
 
     .container {
       background-color: var(--card-bg);
-      padding: 2rem;
+      padding: 1.5rem;
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
       max-width: 650px;
       width: 100%;
       text-align: center;
+      box-sizing: border-box;
     }
 
     h2 {
@@ -58,9 +59,10 @@
       border-radius: 8px;
       margin: 1.5rem 0;
       font-family: monospace;
-      font-size: 1.4rem;
+      font-size: 1.2rem;
       color: #f9e2af;
       letter-spacing: 2px;
+      word-break: break-all;
     }
 
     .btn-verify {
@@ -87,37 +89,49 @@
       line-height: 1.4;
     }
 
-    /* Monitor de LEDs */
+    /* Monitor de LEDs adaptativo (Responsive) */
     #appContent {
       display: none;
     }
 
     .led-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px 20px;
-      margin-bottom: 2rem;
+      grid-template-columns: repeat(2, 1fr); /* 2 columnas en PC */
+      gap: 10px;
+      margin-bottom: 1.5rem;
       text-align: left;
+    }
+
+    /* En móviles de menos de 600px pasa a 1 sola columna para que no se corte */
+    @media (max-width: 600px) {
+      .led-grid {
+        grid-template-columns: 1fr;
+      }
+      .container {
+        padding: 1rem;
+      }
     }
 
     .led-item {
       display: flex;
       align-items: center;
       background: #11111b;
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-radius: 6px;
       border: 1px solid #45475a;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .led {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background-color: var(--led-off);
       border: 2px solid #222;
       box-shadow: 0 0 8px var(--led-off-shadow);
       flex-shrink: 0;
-      margin-right: 12px;
+      margin-right: 10px;
       transition: background-color 0.3s ease;
     }
 
@@ -137,16 +151,17 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      width: 100%;
     }
 
     .led-bit-label {
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       color: #a6adc8;
       font-family: monospace;
     }
 
     .led-text {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #cdd6f4;
       white-space: nowrap;
       overflow: hidden;
@@ -154,24 +169,17 @@
     }
 
     .info-panel {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       border-top: 1px solid #45475a;
       padding-top: 1rem;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-    }
-
-    .val-binary {
-      font-family: monospace;
-      font-size: 1.1rem;
-      letter-spacing: 2px;
-      color: #f9e2af;
+      gap: 6px;
     }
 
     .timestamp {
       color: #a6adc8;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
 
     .status-dot {
@@ -203,12 +211,12 @@
 
     <!-- PANTALLA PRINCIPAL DE MONITORIZACIÓN -->
     <div id="appContent">
-      <h2>Estado de Alarmas (16 Bits)</h2>
+      <h2>Alarmas</h2>
       
       <div class="led-grid" id="ledContainer"></div>
 
       <div class="info-panel">
-        <div>Valor leído: <strong id="valDecimal">--</strong> (<span class="val-binary" id="valBinary">----------------</span>)</div>
+        <div>Valor leído (Decimal): <strong id="valDecimal">--</strong></div>
         <div class="timestamp">Última actualización dato: <span id="timestamp">--</span></div>
         <div class="timestamp"><span class="status-dot" id="statusDot"></span><span id="statusText">Conectando...</span></div>
       </div>
@@ -219,7 +227,7 @@
     // --- CONFIGURACIÓN ---
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZ658g2zLE2ayD-yMQ3Od6bXjEXffo-VKwm4Il1f_JGd9D5zbL-1BEIRnQjck1UPxyPQ/exec'; 
     const FIELD_NUM = 2;
-    const FETCH_INTERVAL_MS = 15000; // 1 minuto
+    const FETCH_INTERVAL_MS = 15000; // 15 segundos
 
     const COOKIE_NAME = 'industrial_device_auth';
 
@@ -227,22 +235,22 @@
     let dynamicApiKey = "";
 
     const NOMBRES_ALARMAS = [
-      "Rebose",   // Bit 0
-      "Vaciado ozono",      // Bit 1
-      "Nivel Alto Depósito",// Bit 2
-      "Reserva 2",  // Bit 3
-      "Reserva 3", // Bit 4
-      "Reserva 4", // Bit 5
-      "Reserva 5", // Bit 6
-      "Reserva 6", // Bit 7
-      "Fuga de Cloro 1",// Bit 8
-      "Fuga de Cloro 2",    // Bit 9
-      "Defecto agua",    // Bit 10
-      "Defecto aire",   // Bit 11
-      "Revose obra de llegada",// Bit 12
-      "Presion incendios",   // Bit 13
-      "Presion cloro",// Bit 14
-      "Reserva 1"   // Bit 15
+      "Rebose",                  // Bit 0
+      "Vaciado ozono",           // Bit 1
+      "Nivel Alto Depósito",     // Bit 2
+      "Reserva 2",               // Bit 3
+      "Reserva 3",               // Bit 4
+      "Reserva 4",               // Bit 5
+      "Reserva 5",               // Bit 6
+      "Reserva 6",               // Bit 7
+      "Fuga de Cloro 1",         // Bit 8
+      "Fuga de Cloro 2",         // Bit 9
+      "Defecto agua",            // Bit 10
+      "Defecto aire",            // Bit 11
+      "Revose obra de llegada",  // Bit 12
+      "Presion incendios",       // Bit 13
+      "Presion cloro",           // Bit 14
+      "Reserva 1"                // Bit 15
     ];
 
     function generateDeviceId() {
@@ -422,7 +430,6 @@
           const numericValue = parseInt(rawValue, 10) & 0xFFFF;
           
           document.getElementById('valDecimal').textContent = numericValue;
-          document.getElementById('valBinary').textContent = numericValue.toString(2).padStart(16, '0');
           document.getElementById('timestamp').textContent = formatToHumanDate(data.created_at);
           
           updateLeds(numericValue);
