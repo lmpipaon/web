@@ -216,7 +216,6 @@
       <div class="led-grid" id="ledContainer"></div>
 
       <div class="info-panel">
-        <div>Valor leído (Decimal): <strong id="valDecimal">--</strong></div>
         <div class="timestamp">Última actualización dato: <span id="timestamp">--</span></div>
         <div class="timestamp"><span class="status-dot" id="statusDot"></span><span id="statusText">Conectando...</span></div>
       </div>
@@ -235,22 +234,22 @@
     let dynamicApiKey = "";
 
     const NOMBRES_ALARMAS = [
-      "Rebose",                  // Bit 0
-      "Vaciado ozono",           // Bit 1
-      "Nivel Alto Depósito",     // Bit 2
-      "Reserva 2",               // Bit 3
-      "Reserva 3",               // Bit 4
-      "Reserva 4",               // Bit 5
-      "Reserva 5",               // Bit 6
-      "Reserva 6",               // Bit 7
-      "Fuga de Cloro 1",         // Bit 8
-      "Fuga de Cloro 2",         // Bit 9
-      "Defecto agua",            // Bit 10
-      "Defecto aire",            // Bit 11
-      "Revose obra de llegada",  // Bit 12
-      "Presion incendios",       // Bit 13
-      "Presion cloro",           // Bit 14
-      "Reserva 1"                // Bit 15
+      "Rebose",               // Bit 0
+      "Vaciado ozono",        // Bit 1
+      "Reserva 2",            // Bit 2 (Cambiado de Nivel Alto Depósito)
+      "Reserva 3",            // Bit 3
+      "Reserva 4",            // Bit 4
+      "Reserva 5",            // Bit 5
+      "Reserva 6",            // Bit 6
+      "Reserva 7",            // Bit 7
+      "Fuga de Cloro 1",      // Bit 8
+      "Fuga de Cloro 2",      // Bit 9
+      "Defecto agua",         // Bit 10
+      "Defecto aire",         // Bit 11
+      "Revose obra de llegada",// Bit 12
+      "Presion incendios",    // Bit 13
+      "Presion cloro",        // Bit 14
+      "Reserva 1"             // Bit 15
     ];
 
     function generateDeviceId() {
@@ -429,7 +428,6 @@
         if (rawValue !== null && rawValue !== undefined) {
           const numericValue = parseInt(rawValue, 10) & 0xFFFF;
           
-          document.getElementById('valDecimal').textContent = numericValue;
           document.getElementById('timestamp').textContent = formatToHumanDate(data.created_at);
           
           updateLeds(numericValue);
