@@ -239,23 +239,23 @@
     let dynamicChannelId = "";
     let dynamicApiKey = "";
 
-    const NOMBRES_ALARMAS = [
-      "Rebose desbaste",
-      "Nivel bajo desbaste",
-      "Reserva 2",
-      "Reserva 3",
-      "Reserva 4",
-      "Reserva 5",
-      "Reserva 6",
-      "Reserva 7",
-      "Fuga de Cloro 1",
-      "Fuga de Cloro 2",
-      "Defecto agua",
-      "Defecto aire",
-      "Revose obra de llegada",
-      "Presion incendios",
-      "Presion cloro",
-      "Reserva 1"
+const NOMBRES_ALARMAS = [
+      "Rebose desbaste",          // Bit 0
+      "Nivel bajo desbaste",     // Bit 1
+      "Reserva 2",               // Bit 2
+      "Reserva 3",               // Bit 3
+      "Reserva 4",               // Bit 4
+      "Reserva 5",               // Bit 5
+      "Reserva 6",               // Bit 6
+      "Reserva 7",               // Bit 7
+      "Fuga de Cloro 1",         // Bit 8
+      "Fuga de Cloro 2",         // Bit 9
+      "Defecto agua",            // Bit 10
+      "Defecto aire",            // Bit 11
+      "Rebose obra de llegada",  // Bit 12
+      "Presión incendios",       // Bit 13
+      "Presión cloro",           // Bit 14
+      "Reserva 1"                // Bit 15
     ];
 
     function generateDeviceId() {
